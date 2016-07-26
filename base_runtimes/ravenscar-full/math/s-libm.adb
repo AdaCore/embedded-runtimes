@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---         Copyright (C) 2014-2015, Free Software Foundation, Inc.          --
+--         Copyright (C) 2014-2016, Free Software Foundation, Inc.          --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -635,6 +635,9 @@ package body System.Libm is
    -- Generic_Atan2 --
    -------------------
 
+   --  Ada expected values:
+   --    Atan2 (y, x) returns a result in [-Pi, Pi]
+
    function Generic_Atan2 (Y, X : T) return T is
 
       --  Cody and Waite implementation (page 194)
@@ -648,25 +651,60 @@ package body System.Libm is
       Result : T;
 
    begin
-      if Y = 0.0 then
+      if Y = 0.0 and then X = 0.0 then
+
+         --    Atan2 (+-0, -0)     = +-Pi
+         --    Atan2 (+-0, +0)     = +-0
+
          if T'Copy_Sign (1.0, X) < 0.0 then
             return T'Copy_Sign (Pi, Y);
          else
             return T'Copy_Sign (0.0, Y);
          end if;
 
+      elsif Y = 0.0 and then abs (X) > 0.0 then
+
+         --    Atan2 (+-0, x)      = +-Pi,        if x < 0
+         --    Atan2 (+-0, x)      = +-0,         if x > 0
+
+         if X < 0.0 then
+            return T'Copy_Sign (Pi, Y);
+         else
+            return T'Copy_Sign (0.0, Y);
+         end if;
+
       elsif X = 0.0 then
+
+         --    Atan2 (y, +-0)      = -0.5 * Pi,   if y < 0
+         --    Atan2 (y, +-0)      =  0.5 * Pi,   if y > 0
+
          return T'Copy_Sign (Half_Pi, Y);
 
-      elsif abs (Y) > T'Last * abs (X) then  --  overflow
-         Result := T (Half_Pi);
+      elsif abs (Y) > 0.0 and then abs (Y) <= T'Last
+        and then abs (X) = Infinity
+      then
 
-      elsif abs (X) > T'Last * abs (Y) then  --  underflow
-         Result := 0.0;
+         --    Atan2 (+-y, -INF)   = +-Pi,        if y > 0 and y is finite
+         --      (tightly approximated)
+         --    Atan2 (+-y, +INF)   = +-0,         if y > 0 and y is finite
 
-      elsif abs (X) > T'Last and then abs (Y) > T'Last then
+         if X < 0.0 then
+            Result := T'Copy_Sign (Pi, Y);
+         else
+            Result := T'Copy_Sign (0.0, Y);
+         end if;
 
-         --  NaN
+      elsif abs (X) <= T'Last and then abs (Y) = Infinity then
+
+         --    Atan2 (+-INF, x)    = +-0.5 * Pi,  if x is finite
+         --      (tightly approximated)
+
+         Result := T'Copy_Sign (Half_Pi, Y);
+
+      elsif abs (X) = Infinity and then abs (Y) = Infinity then
+
+         --    Atan2 (+-INF, -INF) = +-0.75 * Pi (tightly approximated)
+         --    Atan2 (+-INF, +INF) = +-0.25 * Pi (tightly approximated)
 
          if X < 0.0 then
             return T'Copy_Sign (3.0 * Pi / 4.0, Y);
@@ -675,12 +713,13 @@ package body System.Libm is
          end if;
 
       else
-         F := abs (Y / X);
+         --  Be careful not to divide Y/X until we know it won't overflow
 
-         if F > 1.0 then
-            F := 1.0 / F;
+         if abs (Y) > abs (X) then
+            F := abs (X / Y);
             N := 2;
          else
+            F := abs (Y / X);
             N := 0;
          end if;
 

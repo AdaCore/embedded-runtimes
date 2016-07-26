@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 1992-2014, Free Software Foundation, Inc.         --
+--          Copyright (C) 1992-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -99,7 +99,7 @@ package body System.Secondary_Stack is
       Sec_Stack    : constant Stack_Ptr := Get_Sec_Stack;
 
    begin
-      if Sec_Stack.Top + Max_Size > Sec_Stack.Last then
+      if Sec_Stack.Top + Max_Size - 1 > Sec_Stack.Last then
          raise Storage_Error;
       end if;
 
@@ -118,12 +118,12 @@ package body System.Secondary_Stack is
       Stack : constant Stack_Ptr := From_Addr (Stk);
 
    begin
-      pragma Assert (Size >= 2 * Mark_Id'Max_Size_In_Storage_Elements);
+      pragma Assert (Size >= Minimum_Secondary_Stack_Size);
       pragma Assert
         (Stk mod Standard'Maximum_Alignment = SSE.Storage_Offset'(0));
 
       Stack.Top := Stack.Mem'First;
-      Stack.Last := Mark_Id (Size) - 2 * Mark_Id'Max_Size_In_Storage_Elements;
+      Stack.Last := Mark_Id (Size - Minimum_Secondary_Stack_Size);
    end SS_Init;
 
    -------------

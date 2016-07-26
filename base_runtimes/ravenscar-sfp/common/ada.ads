@@ -14,7 +14,7 @@
 ------------------------------------------------------------------------------
 
 package Ada is
-   pragma Pure;
    pragma No_Elaboration_Code_All;
+   pragma Pure;
 
 end Ada;

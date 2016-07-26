@@ -156,6 +156,12 @@ package System.Tasking is
    pragma Unreferenced (Asynchronous_Hold);
    pragma Unreferenced (Interrupt_Server_Blocked_On_Event_Flag);
 
+   type Call_Modes is
+      (Simple_Call, Conditional_Call, Asynchronous_Call, Timed_Call);
+
+   pragma Unreferenced
+     (Simple_Call, Conditional_Call, Asynchronous_Call, Timed_Call);
+
    -------------------------------
    -- Entry related definitions --
    -------------------------------
@@ -183,6 +189,13 @@ package System.Tasking is
 
    type Entry_Call_Link is access all Entry_Call_Record;
 
+   --  Data structure to store the queue of entries. This structure is
+   --  present for each entry of a protected object.
+   type Entry_Queue is record
+      Head : Entry_Call_Link;
+      Tail : Entry_Call_Link;
+   end record;
+
    ----------------------------------
    -- Entry_Call_Record definition --
    ----------------------------------
@@ -199,7 +212,10 @@ package System.Tasking is
       --  being aborted.
 
       Next : Entry_Call_Link;
+      Prev : Entry_Call_Link;
       --  Entry_Call List
+
+      E : Entry_Index;
    end record;
    pragma Suppress_Initialization (Entry_Call_Record);
 
@@ -353,6 +369,13 @@ package System.Tasking is
       --  and only unlocked when it goes from 1 to 0.
       --
       --  Protection: Only accessed by Self
+
+      Secondary_Stack_Size : System.Parameters.Size_Type;
+      --  Secondary_Stack_Size is the size of the secondary stack for the
+      --  task. Defined here since it is the responsibility of the task to
+      --  creates its own secondary stack.
+      --
+      --  Protected: Only accessed by Self
    end record;
    pragma Suppress_Initialization (Common_ATCB);
 
@@ -422,15 +445,16 @@ package System.Tasking is
    --  System.Tasking.Initialization being present, as was done before.
 
    procedure Initialize_ATCB
-     (Task_Entry_Point : Task_Procedure_Access;
-      Task_Arg         : System.Address;
-      Base_Priority    : Extended_Priority;
-      Base_CPU         : System.Multiprocessors.CPU_Range;
-      Task_Info        : System.Task_Info.Task_Info_Type;
-      Stack_Address    : System.Address;
-      Stack_Size       : System.Parameters.Size_Type;
-      T                : Task_Id;
-      Success          : out Boolean);
+     (Task_Entry_Point     : Task_Procedure_Access;
+      Task_Arg             : System.Address;
+      Base_Priority        : Extended_Priority;
+      Base_CPU             : System.Multiprocessors.CPU_Range;
+      Task_Info            : System.Task_Info.Task_Info_Type;
+      Stack_Address        : System.Address;
+      Stack_Size           : System.Parameters.Size_Type;
+      Secondary_Stack_Size : System.Parameters.Size_Type;
+      T                    : Task_Id;
+      Success              : out Boolean);
    --  Initialize fields of a TCB and link into global TCB structures
    --  Call this only with abort deferred and holding All_Tasks_L.
 

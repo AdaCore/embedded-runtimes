@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---          Copyright (C) 1992-2014, Free Software Foundation, Inc.         --
+--          Copyright (C) 1992-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -34,6 +34,10 @@ package System.Secondary_Stack is
 
    Default_Secondary_Stack_Size : constant := 10 * 1024;
    --  Default size of a secondary stack
+
+   Minimum_Secondary_Stack_Size : constant Natural;
+   --  The minimum size of the secondary stack so that the internal
+   --  requirements of the stack are met.
 
    procedure SS_Init
      (Stk  : System.Address;
@@ -69,5 +73,8 @@ private
    --  mechanism for specific allocation/deallocation in the compiler
 
    type Mark_Id is new SSE.Integer_Address;
+
+   Minimum_Secondary_Stack_Size : constant Natural :=
+     2 * Mark_Id'Max_Size_In_Storage_Elements;
 
 end System.Secondary_Stack;

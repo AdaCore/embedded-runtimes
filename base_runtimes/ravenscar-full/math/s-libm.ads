@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---           Copyright (C) 2014-2015, Free Software Foundation, Inc.        --
+--           Copyright (C) 2014-2016, Free Software Foundation, Inc.        --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -69,6 +69,7 @@ package System.Libm is
    generic
       type T is digits <>;
       with function Approx_Atan (X : T) return T is <>;
+      with function Infinity return T is <>;
    function Generic_Atan2 (Y, X : T) return T;
 
    generic

@@ -124,6 +124,7 @@ package System.Tasking.Protected_Objects is
 
    type Protected_Entry_Index is new Entry_Index
      range Null_Protected_Entry .. Max_Protected_Entry;
+   --  Index of the entry (and in some cases of the queue)
 
    type Barrier_Function_Pointer is access
      function
@@ -152,8 +153,6 @@ package System.Tasking.Protected_Objects is
    end record;
    --  The compiler-generated code passes objects of this type to the GNARL
    --  to allow it to access the executable code of an entry body.
-
-   type Entry_Body_Access is access all Entry_Body;
 
    type Protection is limited private;
    --  This type contains the GNARL state of a protected object. The

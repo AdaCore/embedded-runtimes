@@ -192,7 +192,7 @@ package System.Libm_Single is
    --    Atan2 (y, +-0)      =  0.5 * Pi,   if y > 0
    --    Atan2 (+-y, -INF)   = +-Pi,        if y > 0 and y is finite
    --      (tightly approximated)
-   --    Atan2 (+-y, -INF)   = +-0,         if y < 0 and y is finite
+   --    Atan2 (+-y, +INF)   = +-0,         if y > 0 and y is finite
    --    Atan2 (+-INF, x)    = +-0.5 * Pi,  if x is finite
    --      (tightly approximated)
    --    Atan2 (+-INF, -INF) = +-0.75 * Pi (tightly approximated)

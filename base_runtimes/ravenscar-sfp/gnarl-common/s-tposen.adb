@@ -7,7 +7,7 @@
 --                                                                          --
 --                                  B o d y                                 --
 --                                                                          --
---                     Copyright (C) 1998-2013, AdaCore                     --
+--                     Copyright (C) 1998-2016, AdaCore                     --
 --                                                                          --
 -- GNARL is free software; you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -76,10 +76,10 @@ package body System.Tasking.Protected_Objects.Single_Entry is
    ---------------------------------
 
    procedure Initialize_Protection_Entry
-     (Object           : Protection_Entry_Access;
-      Ceiling_Priority : Integer;
-      Compiler_Info    : System.Address;
-      Entry_Body       : Entry_Body_Access)
+     (Object            : Protection_Entry_Access;
+      Ceiling_Priority  : Integer;
+      Compiler_Info     : System.Address;
+      Entry_Body        : Entry_Body_Access)
    is
    begin
       Initialize_Protection (Object.Common'Access, Ceiling_Priority);

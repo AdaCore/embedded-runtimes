@@ -316,6 +316,13 @@ package System.Tasking is
       Task_Info : System.Task_Info.Task_Info_Type;
       --  System-specific attributes of the task as specified by the
       --  Task_Info pragma.
+
+      Secondary_Stack_Size : System.Parameters.Size_Type;
+      --  Secondary_Stack_Size is the size of the secondary stack for the
+      --  task. Defined here since it is the responsibility of the task to
+      --  creates its own secondary stack.
+      --
+      --  Protected: Only accessed by Self
    end record;
    pragma Suppress_Initialization (Common_ATCB);
 
@@ -386,15 +393,16 @@ package System.Tasking is
    --  System.Tasking.Initialization being present, as was done before.
 
    procedure Initialize_ATCB
-     (Task_Entry_Point : Task_Procedure_Access;
-      Task_Arg         : System.Address;
-      Base_Priority    : Extended_Priority;
-      Base_CPU         : System.Multiprocessors.CPU_Range;
-      Task_Info        : System.Task_Info.Task_Info_Type;
-      Stack_Address    : System.Address;
-      Stack_Size       : System.Parameters.Size_Type;
-      T                : Task_Id;
-      Success          : out Boolean);
+     (Task_Entry_Point     : Task_Procedure_Access;
+      Task_Arg             : System.Address;
+      Base_Priority        : Extended_Priority;
+      Base_CPU             : System.Multiprocessors.CPU_Range;
+      Task_Info            : System.Task_Info.Task_Info_Type;
+      Stack_Address        : System.Address;
+      Stack_Size           : System.Parameters.Size_Type;
+      Secondary_Stack_Size : System.Parameters.Size_Type;
+      T                    : Task_Id;
+      Success              : out Boolean);
    --  Initialize fields of a TCB and link into global TCB structures
    --  Call this only with abort deferred and holding All_Tasks_L.
 

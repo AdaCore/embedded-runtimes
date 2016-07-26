@@ -398,6 +398,7 @@ package body System.Task_Primitives.Operations is
          Task_Info.Unspecified_Task_Info,
          Idle_Stacks (CPU_Id)'Address,
          Parameters.Size_Type (Idle_Stack_Size),
+         Parameters.Unspecified_Size,
          Idle_Task'Access, Success);
 
       Idle_Task.Common.LL.Thread := Idle_Task.Common.LL.Thread_Desc'Access;

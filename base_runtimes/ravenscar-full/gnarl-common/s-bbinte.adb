@@ -218,8 +218,18 @@ package body System.BB.Interrupts is
 
       Interrupt_Being_Handled (CPU_Id) := Previous_Int;
 
+      --  Interrupt has been handled, mark end of interrupt
+
+      Board_Support.Clear_Interrupt_Request (Interrupt);
+
+      --  Restore previous interrupt number (which is False unless interrupt
+      --  is nested).
+
       Self_Id.In_Interrupt := Prev_In_Interr;
 
+      --  Switch back to previous priority
+
+      Board_Support.Set_Current_Priority (Caller_Priority);
    end Interrupt_Wrapper;
 
    ----------------------------

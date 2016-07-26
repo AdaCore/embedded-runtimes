@@ -6,7 +6,7 @@
 --                                                                          --
 --                                  S p e c                                 --
 --                                                                          --
---                     Copyright (C) 1998-2013, AdaCore                     --
+--                     Copyright (C) 1998-2016, AdaCore                     --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -172,6 +172,9 @@ package System.Tasking.Protected_Objects.Single_Entry is
    --  is maintained by the compiler-generated code.
 
    type Protection_Entry_Access is access all Protection_Entry;
+
+   type Entry_Body_Access is access constant Entry_Body;
+   --  Access to barrier and action function of an entry
 
    procedure Initialize_Protection_Entry
      (Object            : Protection_Entry_Access;

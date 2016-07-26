@@ -81,15 +81,16 @@ package body System.Tasking is
    ---------------------
 
    procedure Initialize_ATCB
-     (Task_Entry_Point : Task_Procedure_Access;
-      Task_Arg         : System.Address;
-      Base_Priority    : Extended_Priority;
-      Base_CPU         : System.Multiprocessors.CPU_Range;
-      Task_Info        : System.Task_Info.Task_Info_Type;
-      Stack_Address    : System.Address;
-      Stack_Size       : System.Parameters.Size_Type;
-      T                : Task_Id;
-      Success          : out Boolean)
+     (Task_Entry_Point     : Task_Procedure_Access;
+      Task_Arg             : System.Address;
+      Base_Priority        : Extended_Priority;
+      Base_CPU             : System.Multiprocessors.CPU_Range;
+      Task_Info            : System.Task_Info.Task_Info_Type;
+      Stack_Address        : System.Address;
+      Stack_Size           : System.Parameters.Size_Type;
+      Secondary_Stack_Size : System.Parameters.Size_Type;
+      T                    : Task_Id;
+      Success              : out Boolean)
    is
    begin
       T.Common.State := Unactivated;
@@ -108,6 +109,7 @@ package body System.Tasking is
       T.Common.Task_Arg                 := Task_Arg;
       T.Common.Task_Entry_Point         := Task_Entry_Point;
       T.Common.Task_Info                := Task_Info;
+      T.Common.Secondary_Stack_Size     := Secondary_Stack_Size;
 
       T.Common.Compiler_Data.Pri_Stack_Info.Start_Address :=
         Stack_Address;
@@ -154,7 +156,7 @@ package body System.Tasking is
 
       Initialize_ATCB
         (null, Null_Address, Base_Priority, CPU'First,
-         Task_Info.Unspecified_Task_Info, Null_Address, 0,
+         Task_Info.Unspecified_Task_Info, Null_Address, 0, 0,
          Environment_Task'Access, Success);
 
       Task_Primitives.Operations.Initialize

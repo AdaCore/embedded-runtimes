@@ -73,7 +73,10 @@ private
    --  underlying operating system.
 
    protected type Suspension_Object is
-      entry Wait;
+      entry Wait
+        with Max_Queue_Length => 1;
+      --  At most one task can be waiting, in accordance to D.10/10
+
       procedure Set_False;
       procedure Set_True;
       function Get_Open return Boolean;
