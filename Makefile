@@ -5,8 +5,8 @@ all:
 	  echo $$d; \
 	  cd $$d; \
 	  gprbuild -P ravenscar_build.gpr -j0; \
-	  echo * > obj/.gitignore; \
-          echo * > adalib/.gitignore; \
+	  echo \* > obj/.gitignore; \
+          echo \* > adalib/.gitignore; \
 	  cd ..; \
 	done
 
