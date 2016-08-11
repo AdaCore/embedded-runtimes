@@ -1,0 +1,6 @@
+../../bsps/sam4s/bsp
+../../base_runtimes/ravenscar-sfp/arch
+../../base_runtimes/ravenscar-sfp/common
+../../bsps/sam4s/gnarl-bsp
+../../base_runtimes/ravenscar-sfp/gnarl-common
+../../base_runtimes/ravenscar-sfp/gnarl-arch-sam

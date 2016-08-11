@@ -86,7 +86,10 @@ private
       Prev_Free : Free_Cell_Acc;
       Next_Free : Free_Cell_Acc;
       --  Doubly linked list of free blocks
-   end record;
+   end record
+     with Pack,
+          Size => 4 * Standard'Address_Size,
+          Alignment => Standard'Maximum_Alignment;
 
    Free_List : Free_Cell_Acc;
    --  Linked list of free cells ordered by increasing size

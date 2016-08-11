@@ -39,8 +39,8 @@ with System.BB.Board_Parameters;
 with System.BB.MCU_Parameters;
 
 package System.BB.Parameters is
+   pragma Preelaborate;
    pragma No_Elaboration_Code_All;
-   pragma Preelaborate (System.BB.Parameters);
 
    Clock_Frequency : constant := Board_Parameters.Main_Clock_Frequency;
    pragma Compile_Time_Error
