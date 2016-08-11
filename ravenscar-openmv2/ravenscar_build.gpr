@@ -1,0 +1,31 @@
+with "runtime_build.gpr";
+
+project Ravenscar_Build is
+  for Languages use ("Ada");
+
+  for Library_Auto_Init use "False";
+  for Library_Name use "gnarl";
+  for Library_Kind use "static";
+
+  for Target use Runtime_Build'Target;
+  for Runtime ("Ada") use Runtime_Build'Runtime ("Ada");
+
+  case Runtime_Build.RTS is
+     when "ravenscar-sfp" =>
+        for Library_Dir use "sfp/adalib";
+        for Object_Dir use "sfp/obj";
+
+        for Source_Dirs use ("../bsps/openmv2/gnarl-bsp",
+                             "../base_runtimes/ravenscar-sfp/gnarl-common",
+                             "../base_runtimes/ravenscar-sfp/gnarl-arch-stm32");
+     when "ravenscar-full" =>
+        for Library_Dir use "full/adalib";
+        for Object_Dir use "full/obj";
+
+        for Source_Dirs use ("../bsps/openmv2/gnarl-bsp",
+                             "../base_runtimes/ravenscar-full/gnarl-common",
+                             "../base_runtimes/ravenscar-full/gnarl-arch-stm32");
+  end case;
+
+  package Compiler renames Runtime_Build.Compiler;
+end Ravenscar_Build;
