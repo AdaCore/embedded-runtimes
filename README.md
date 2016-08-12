@@ -16,4 +16,4 @@ To use such runtimes, in your project file, just reference them by their
 relative directory path:
 
     for Runtime("Ada") use Project'Project_Dir &
-       "../embedded-runtimes/ravenscar-sfp-stm32f769disco";
+       "../embedded-runtimes/ravenscar-stm32f769disco/sfp";
