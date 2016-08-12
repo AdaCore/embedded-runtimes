@@ -1,7 +1,7 @@
 with "target_options.gpr";
 
 project Runtime_Build is
-  for Languages use ("Ada", "C", "Asm_Cpp");
+  for Languages use ("Ada", "Asm_Cpp");
 
   type RTS_Kind is ("ravenscar-sfp");
   RTS : RTS_Kind := External ("RTS", "ravenscar-sfp");

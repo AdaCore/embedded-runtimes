@@ -1,10 +1,15 @@
 with "target_options.gpr";
 
 project Runtime_Build is
-  for Languages use ("Ada", "C", "Asm_Cpp");
+   type RTS_Kind is ("ravenscar-sfp", "ravenscar-full");
+   RTS : RTS_Kind := External ("RTS", "ravenscar-sfp");
 
-  type RTS_Kind is ("ravenscar-sfp", "ravenscar-full");
-  RTS : RTS_Kind := External ("RTS", "ravenscar-sfp");
+   case RTS is
+      when "ravenscar-sfp" =>
+         for Languages use ("Ada", "Asm_Cpp");
+      when "ravenscar-full" =>
+         for Languages use ("Ada", "C", "Asm_Cpp");
+   end case;
 
   for Library_Auto_Init use "False";
   for Library_Name use "gnat";
