@@ -1,28 +1,28 @@
 with "target_options.gpr";
 
 project Runtime_Build is
-  for Languages use ("Ada", "C", "Asm_Cpp");
+   for Languages use ("Ada", "Asm_Cpp");
 
-  type RTS_Kind is ("ravenscar-sfp");
-  RTS : RTS_Kind := External ("RTS", "ravenscar-sfp");
+   type RTS_Kind is ("ravenscar-sfp");
+   RTS : RTS_Kind := External ("RTS", "ravenscar-sfp");
 
-  for Library_Auto_Init use "False";
-  for Library_Name use "gnat";
-  for Library_Kind use "static";
+   for Library_Auto_Init use "False";
+   for Library_Name use "gnat";
+   for Library_Kind use "static";
 
-  for Target use "arm-eabi";
+   for Target use "arm-eabi";
 
-  for Library_Dir use "sfp/adalib";
-  for Object_Dir use "sfp/obj";
+   for Library_Dir use "sfp/adalib";
+   for Object_Dir use "sfp/obj";
 
-  for Source_Dirs use ("../bsps/samg55/bsp",
-                       "../base_runtimes/ravenscar-sfp/arch",
-                       "../base_runtimes/ravenscar-sfp/common");
-  for Runtime ("Ada") use Project'Project_Dir & "sfp";
+   for Source_Dirs use ("../bsps/samg55/bsp",
+                        "../base_runtimes/ravenscar-sfp/arch",
+                        "../base_runtimes/ravenscar-sfp/common");
+   for Runtime ("Ada") use Project'Project_Dir & "sfp";
 
-  type Build_Type is ("Production", "Debug", "Gnatcov");
+   type Build_Type is ("Production", "Debug", "Gnatcov");
 
-  Build : Build_Type := external ("BUILD_RTS", "Production");
+   Build : Build_Type := external ("BUILD_RTS", "Production");
 
   package Compiler is
      --  COMFLAGS here is common flags (used for C and Ada).
