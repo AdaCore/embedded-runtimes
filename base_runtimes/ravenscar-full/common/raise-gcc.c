@@ -34,6 +34,7 @@
 #include "tconfig.h"
 #include "tsystem.h"
 
+#include <string.h>
 #include <stdarg.h>
 typedef char bool;
 # define true 1
