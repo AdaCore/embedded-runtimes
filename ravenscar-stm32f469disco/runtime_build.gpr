@@ -34,7 +34,8 @@ project Runtime_Build is
          for Source_Dirs use ("../bsps/stm32f469disco/bsp",
                               "../base_runtimes/ravenscar-full/arch",
                               "../base_runtimes/ravenscar-full/common",
-                              "../base_runtimes/ravenscar-full/math");
+                              "../base_runtimes/ravenscar-full/math",
+                              "../base_runtimes/ravenscar-full/math-sp");
          for Runtime ("Ada") use Project'Project_Dir & "full";
   end case;
 
