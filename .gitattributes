@@ -1,0 +1,2 @@
+# Avoid end of line normalization (conversion to crlf or lf)
+* -text
