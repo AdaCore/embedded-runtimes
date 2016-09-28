@@ -44,6 +44,11 @@ typedef char bool;
 # define true 1
 # define false 0
 
+#ifdef __ARM_EABI_UNWINDER__
+/* for memcmp */
+#include "string.h"
+#endif
+
 #include "raise.h"
 
 #ifdef __APPLE__
