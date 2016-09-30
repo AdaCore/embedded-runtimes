@@ -1,0 +1,6 @@
+../../bsps/kinetis_kl25z_frdm/bsp
+../../base_runtimes/ravenscar-sfp/arch
+../../base_runtimes/ravenscar-sfp/common
+../../bsps/kinetis_kl25z_frdm/gnarl-bsp
+../../base_runtimes/ravenscar-sfp/gnarl-common
+../../base_runtimes/ravenscar-sfp/gnarl-arch-kinetis_kl25z
