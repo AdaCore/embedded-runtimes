@@ -27,10 +27,15 @@
 with Kinetis_K64F.WDOG; use Kinetis_K64F;
 
 package body Watchdog_Timer is
+   --
+   --  Compile-time flag to enable/disable firing to the watchdog timer
+   --
+   Watchdog_On : constant Boolean := False;
+
    --  Watchdog timeout value in watchdog clock cycles:
    Watchdog_Timeout : constant Half_Word := 16#2ff#; -- ~ 5s
 
-   procedure Initialize (Watchdog_On : Boolean) is
+   procedure Initialize is
       STCTRLH_Value : WDOG.STCTRLH_Type;
    begin
       --

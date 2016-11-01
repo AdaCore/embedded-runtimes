@@ -28,6 +28,9 @@ with Kinetis_KL25Z.SIM; use Kinetis_KL25Z;
 
 --  package SIM renames Kinetis_KL25Z.SIM;
 package body Watchdog_Timer is
+   --
+   --  Compile-time flag to enable/disable firing to the watchdog timer
+   --
    Watchdog_On : constant Boolean := False;
 
    procedure Initialize is

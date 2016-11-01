@@ -24,9 +24,33 @@
 --  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 --  POSSIBILITY OF SUCH DAMAGE.
 --
-pragma Restrictions (No_Elaboration_Code);
 
-package Watchdog_Timer is
+with System.Text_IO.Extended;
+package body Cpu_Exception_Handlers is
 
-   procedure Initialize;
-end Watchdog_Timer;
+   procedure Common_Cpu_Exception_Handler (Msg : String) with No_Return;
+
+   ----------------------------------
+   -- Common_Cpu_Exception_Handler --
+   ----------------------------------
+
+   procedure Common_Cpu_Exception_Handler (Msg : String) is
+   begin
+      System.Text_IO.Extended.Put_String (Msg & ASCII.LF);
+
+      loop
+         null;
+      end loop;
+
+   end Common_Cpu_Exception_Handler;
+
+   ------------------------
+   -- Hard_Fault_Handler --
+   ------------------------
+
+   procedure Hard_Fault_Handler is
+   begin
+      Common_Cpu_Exception_Handler ("*** Hard Fault ***");
+   end Hard_Fault_Handler;
+
+end Cpu_Exception_Handlers;

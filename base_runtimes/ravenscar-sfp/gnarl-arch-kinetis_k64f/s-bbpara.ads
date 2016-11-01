@@ -58,7 +58,7 @@ package System.BB.Parameters is
    --  These definitions are in this package in order to isolate target
    --  dependencies.
 
-   Number_Of_Interrupt_ID : constant := 85;
+   Number_Of_Interrupt_ID : constant := 87;
    --  Number of interrupts (for both the interrupt controller and the
    --  Sys_Tick_Trap). This static constant is used to declare a type, and
    --  the handler table.

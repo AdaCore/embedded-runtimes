@@ -57,7 +57,6 @@ _start_rom:
          * NOTE: Initializing the watchdog must be done first, otherwise the
          * watchdog will fire.
          */
-        mov     r0, #0
         bl      watchdog_timer__initialize
 
         /* Enable FPU */

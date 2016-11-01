@@ -26,7 +26,13 @@
 --
 pragma Restrictions (No_Elaboration_Code);
 
-package Watchdog_Timer is
+--
+--  @summary Cortex-M CPU core exception handlers
+--
+package Cpu_Exception_Handlers is
 
-   procedure Initialize;
-end Watchdog_Timer;
+   procedure Hard_Fault_Handler
+     with No_Return;
+   pragma Export (C, Hard_Fault_Handler, "hard_fault_handler");
+
+end Cpu_Exception_Handlers;

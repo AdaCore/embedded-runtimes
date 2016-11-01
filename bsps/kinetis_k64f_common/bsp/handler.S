@@ -50,7 +50,7 @@ __vectors:
 	.word   0                    /* stack top address */
 	.word   fault                /* 1 Reset.  */
 	.word   fault                /* 2 NMI.  */
-	.word   fault	             /* 3 Hard fault. */
+	.word   hard_fault_handler   /* 3 Hard fault. */
 	.word   fault                /* 4 Mem manage.  */
 	.word   fault                /* 5 Bus fault.  */
 	.word   fault                /* 6 Usage fault.  */
