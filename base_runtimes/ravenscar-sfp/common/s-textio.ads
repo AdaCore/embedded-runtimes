@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---          Copyright (C) 2011-2014, Free Software Foundation, Inc.         --
+--          Copyright (C) 2011-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -28,6 +28,7 @@
 --  of Ada.Text_IO used in ZFP runtimes or bare board platforms.
 
 package System.Text_IO is
+   pragma No_Elaboration_Code_All;
    pragma Preelaborate;
 
    --  The interface uses two subprograms for each direction: one for the ready
@@ -55,7 +56,7 @@ package System.Text_IO is
 
    procedure Put (C : Character);
    --  Write a character on the console. Must be called only when Is_Tx_Ready
-   --  has returned True before, otherwise its behaviour is undefined.
+   --  has returned True before, otherwise its behavior is undefined.
 
    function Use_Cr_Lf_For_New_Line return Boolean;
    --  Return True if New_Line should output CR + LF, otherwise it will output
@@ -72,5 +73,5 @@ package System.Text_IO is
 
    function Get return Character;
    --  Read a character from the console. Must be called only when Is_Rx_Ready
-   --  has returned True, otherwise behaviour is undefined.
+   --  has returned True, otherwise behavior is undefined.
 end System.Text_IO;

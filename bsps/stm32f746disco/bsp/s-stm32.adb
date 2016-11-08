@@ -25,17 +25,17 @@ with Ada.Unchecked_Conversion;
 with System.BB.Parameters;
 
 with Interfaces;            use Interfaces;
-with Interfaces.Bit_Types;  use Interfaces.Bit_Types;
+with Interfaces.STM32;      use Interfaces.STM32;
 with Interfaces.STM32.RCC;  use Interfaces.STM32.RCC;
 
 package body System.STM32 is
 
    package Param renames System.BB.Parameters;
 
-   HPRE_Presc_Table : constant array (AHB_Prescaler_Enum) of Word :=
+   HPRE_Presc_Table : constant array (AHB_Prescaler_Enum) of UInt32 :=
      (2, 4, 8, 16, 64, 128, 256, 512);
 
-   PPRE_Presc_Table : constant array (APB_Prescaler_Enum) of Word :=
+   PPRE_Presc_Table : constant array (APB_Prescaler_Enum) of UInt32 :=
      (2, 4, 8, 16);
 
    -------------------
@@ -65,10 +65,10 @@ package body System.STM32 is
 
          when SYSCLK_SRC_PLL =>
             declare
-               Pllm   : constant Word := Word (RCC_Periph.PLLCFGR.PLLM);
-               Plln   : constant Word := Word (RCC_Periph.PLLCFGR.PLLN);
-               Pllp   : constant Word := Word (RCC_Periph.PLLCFGR.PLLP);
-               Pllvco : Word;
+               Pllm   : constant UInt32 := UInt32 (RCC_Periph.PLLCFGR.PLLM);
+               Plln   : constant UInt32 := UInt32 (RCC_Periph.PLLCFGR.PLLN);
+               Pllp   : constant UInt32 := UInt32 (RCC_Periph.PLLCFGR.PLLP);
+               Pllvco : UInt32;
 
             begin
                case PLL_Source'Val (RCC_Periph.PLLCFGR.PLLSRC) is
@@ -89,19 +89,19 @@ package body System.STM32 is
            (CFGR_PPRE_Element, APB_Prescaler);
 
          HPRE      : constant AHB_Prescaler := To_AHBP (RCC_Periph.CFGR.HPRE);
-         HPRE_Div  : constant Word := (if HPRE.Enabled
-                                       then HPRE_Presc_Table (HPRE.Value)
-                                       else 1);
+         HPRE_Div  : constant UInt32 := (if HPRE.Enabled
+                                         then HPRE_Presc_Table (HPRE.Value)
+                                         else 1);
          PPRE1     : constant APB_Prescaler :=
                       To_APBP (RCC_Periph.CFGR.PPRE.Arr (1));
-         PPRE1_Div : constant Word := (if PPRE1.Enabled
-                                       then PPRE_Presc_Table (PPRE1.Value)
-                                       else 1);
+         PPRE1_Div : constant UInt32 := (if PPRE1.Enabled
+                                         then PPRE_Presc_Table (PPRE1.Value)
+                                         else 1);
          PPRE2     : constant APB_Prescaler :=
                       To_APBP (RCC_Periph.CFGR.PPRE.Arr (2));
-         PPRE2_Div : constant Word := (if PPRE2.Enabled
-                                       then PPRE_Presc_Table (PPRE2.Value)
-                                       else 1);
+         PPRE2_Div : constant UInt32 := (if PPRE2.Enabled
+                                         then PPRE_Presc_Table (PPRE2.Value)
+                                         else 1);
 
       begin
          Result.HCLK  := Result.SYSCLK / HPRE_Div;

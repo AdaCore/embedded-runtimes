@@ -30,14 +30,14 @@
 ------------------------------------------------------------------------------
 
 with System.BB.Time;
-with System.BB.CPU_Primitives.Multiprocessors;
+with System.BB.Board_Support;
 with System.Multiprocessors;
 
 package System.BB.Threads.Queues is
    pragma Preelaborate;
 
    use type System.BB.Time.Time;
-   package CPRMU renames System.BB.CPU_Primitives.Multiprocessors;
+   package BOSUMU renames System.BB.Board_Support.Multiprocessors;
 
    ----------------
    -- Ready list --
@@ -236,7 +236,7 @@ package System.BB.Threads.Queues is
 
      Export => True,
      Convention => Asm,
-     External_Name => "context_switch_needed";
+     External_Name => "__gnat_context_switch_needed";
 
    ----------------
    -- Alarm list --
@@ -305,8 +305,8 @@ package System.BB.Threads.Queues is
          --  The extracted thread must be the one with the smallest value of
          --  Alarm_Time.
 
-         and Get_Next_Alarm_Time (CPRMU.Current_CPU)'Old <=
-             Get_Next_Alarm_Time (CPRMU.Current_CPU),
+         and Get_Next_Alarm_Time (BOSUMU.Current_CPU)'Old <=
+             Get_Next_Alarm_Time (BOSUMU.Current_CPU),
 
      Inline => True;
 
@@ -320,7 +320,7 @@ package System.BB.Threads.Queues is
    --  Wakeup all expired alarms and set the alarm timer if needed
 
      Post =>
-       Get_Next_Alarm_Time (CPRMU.Current_CPU) > Now;
+       Get_Next_Alarm_Time (BOSUMU.Current_CPU) > Now;
 
    -----------------
    -- Global_List --

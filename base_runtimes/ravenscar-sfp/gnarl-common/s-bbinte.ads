@@ -8,7 +8,7 @@
 --                                                                          --
 --        Copyright (C) 1999-2002 Universidad Politecnica de Madrid         --
 --             Copyright (C) 2003-2004 The European Space Agency            --
---                     Copyright (C) 2003-2013, AdaCore                     --
+--                     Copyright (C) 2003-2016, AdaCore                     --
 --                                                                          --
 -- GNARL is free software; you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -41,13 +41,13 @@ with System.Multiprocessors;
 package System.BB.Interrupts is
    pragma Preelaborate;
 
-   Max_Interrupt : constant := System.BB.Parameters.Number_Of_Interrupt_ID;
-   --  Number of interrupts
+   subtype Interrupt_ID is System.BB.Parameters.Interrupt_Range;
+   --  Interrupt identifiers.
 
-   subtype Interrupt_ID is Natural range 0 .. Max_Interrupt;
-   --  Interrupt identifier
+   subtype Any_Interrupt_ID is Integer
+     range Interrupt_ID'First .. Interrupt_ID'Last + 1;
 
-   No_Interrupt : constant Interrupt_ID := 0;
+   No_Interrupt : constant Any_Interrupt_ID := Any_Interrupt_ID'Last;
    --  Special value indicating no interrupt
 
    type Interrupt_Handler is access procedure (Id : Interrupt_ID);
@@ -57,18 +57,21 @@ package System.BB.Interrupts is
    --  Initialize table containing the pointers to the different interrupt
    --  stacks. Should be called before any other subprograms in this package.
 
+   procedure Interrupt_Wrapper (Id : Interrupt_ID);
+   --  This wrapper procedure is in charge of setting the appropriate
+   --  software priorities before calling the user-defined handler. It is
+   --  called directly by the Board_Support.
+
    procedure Attach_Handler
      (Handler : not null Interrupt_Handler;
       Id      : Interrupt_ID;
-      Prio    : Interrupt_Priority)
-   with
-     Pre => Id /= No_Interrupt;
+      Prio    : Interrupt_Priority);
    pragma Inline (Attach_Handler);
    --  Attach the procedure Handler as handler of the interrupt Id. Prio is
    --  the priority of the associated protected object. This priority could be
    --  used to program the hardware priority of the interrupt.
 
-   function Current_Interrupt return Interrupt_ID;
+   function Current_Interrupt return Any_Interrupt_ID;
    --  Function that returns the hardware interrupt currently being handled on
    --  the current CPU (if any). If no hardware interrupt is being handled the
    --  returned value is No_Interrupt.

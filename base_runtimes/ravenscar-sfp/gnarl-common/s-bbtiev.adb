@@ -21,17 +21,17 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with System.BB.CPU_Primitives.Multiprocessors;
 with System.BB.Parameters;
 with System.BB.Protection;
 with System.BB.Threads;
 with System.BB.Threads.Queues;
+with System.BB.Board_Support;
 
 package body System.BB.Timing_Events is
 
    use type System.BB.Time.Time;
    use System.Multiprocessors;
-   use System.BB.CPU_Primitives.Multiprocessors;
+   use System.BB.Board_Support.Multiprocessors;
    use System.BB.Threads;
 
    Events_Table : array (CPU) of Timing_Event_Access := (others => null);

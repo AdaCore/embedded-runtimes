@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---                     Copyright (C) 2010-2013, AdaCore                     --
+--                     Copyright (C) 2010-2016, AdaCore                     --
 --                                                                          --
 -- GNARL is free software; you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -23,34 +23,15 @@
 
 pragma Restrictions (No_Elaboration_Code);
 
+with System.BB.Board_Support;
+with System.BB.Threads;
+with System.BB.Threads.Queues;
+with System.BB.Protection;
+with System.BB.Timing_Events;
+with System.BB.Time;
+
 package body System.BB.CPU_Primitives.Multiprocessors is
-
-   -----------------
-   -- Current_CPU --
-   -----------------
-
-   function Current_CPU return System.Multiprocessors.CPU is
-   begin
-      return System.Multiprocessors.CPU'First;
-   end Current_CPU;
-
-   --------------
-   -- Poke_CPU --
-   --------------
-
-   procedure Poke_CPU (CPU_Id : System.Multiprocessors.CPU) is
-   begin
-      null;
-   end Poke_CPU;
-
-   ---------------
-   -- Start_CPU --
-   ---------------
-
-   procedure Start_CPU (CPU_Id : System.Multiprocessors.CPU) is
-   begin
-      null;
-   end Start_CPU;
+   use System.Multiprocessors;
 
    --------------------
    -- Start_All_CPUs --
@@ -58,7 +39,42 @@ package body System.BB.CPU_Primitives.Multiprocessors is
 
    procedure Start_All_CPUs is
    begin
-      null;
+      --  Nothing to do when there's only one CPU
+
+      if System.Multiprocessors.Number_Of_CPUs = 1 then
+         return;
+      end if;
+
+      System.BB.Board_Support.Multiprocessors.Start_All_CPUs;
    end Start_All_CPUs;
+
+   ------------------
+   -- Poke_Handler --
+   ------------------
+
+   procedure Poke_Handler is
+      use type Threads.Thread_States;
+
+      Now : Time.Time;
+
+   begin
+      --  The access to the queues must be protected
+
+      Protection.Enter_Kernel;
+
+      --  Handle alarms in the case the alarm is system-wide
+
+      Now := Time.Clock;
+
+      --  Execute expired events of the current CPU
+
+      Timing_Events.Execute_Expired_Timing_Events (Now);
+
+      --  Wake up alarms
+
+      Threads.Queues.Wakeup_Expired_Alarms (Now);
+
+      Protection.Leave_Kernel;
+   end Poke_Handler;
 
 end System.BB.CPU_Primitives.Multiprocessors;

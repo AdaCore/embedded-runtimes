@@ -91,7 +91,7 @@ package body System.BB.CPU_Primitives is
    --  the current time exceeds the Alarm_Time by at most half the modulus
    --  of Timer_Interval.
 
-   Alarm_Time      :  Board_Support.Timer_Interval;
+   Alarm_Time : Board_Support.Time.Timer_Interval;
    pragma Volatile (Alarm_Time);
    pragma Import (C, Alarm_Time, "__gnat_alarm_time");
 
@@ -401,8 +401,9 @@ package body System.BB.CPU_Primitives is
    ----------------------
 
    procedure Sys_Tick_Handler is
+      use Board_Support.Time;
       Max_Alarm_Interval : constant Timer_Interval := Timer_Interval'Last / 2;
-      Now : constant Timer_Interval := Read_Clock;
+      Now : constant Timer_Interval := Timer_Interval (Read_Clock);
 
    begin
       --  The following allows max. efficiency for "useless" tick interrupts
@@ -508,7 +509,7 @@ package body System.BB.CPU_Primitives is
       --  Set the BASEPRI according to the specified level. PRIMASK is still
       --  set, so the change does not take effect until the next Asm.
 
-      Set_Current_Priority (Level);
+      Board_Support.Interrupts.Set_Current_Priority (Level);
 
       --  The following enables interrupts and will cause any pending
       --  interrupts to take effect. The barriers and their placing are

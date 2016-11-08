@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---                     Copyright (C) 2010-2015, AdaCore                     --
+--                     Copyright (C) 2010-2016, AdaCore                     --
 --                                                                          --
 -- GNARL is free software; you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -28,15 +28,8 @@ with System.Multiprocessors;
 package System.BB.CPU_Primitives.Multiprocessors is
    pragma Preelaborate;
 
-   function Current_CPU return System.Multiprocessors.CPU;
-   pragma Inline (Current_CPU);
-   --  Return the id of the current CPU
-
-   procedure Poke_CPU (CPU_Id : System.Multiprocessors.CPU);
-   --  Poke the given CPU to signal that a rescheduling may be required
-
-   procedure Start_CPU (CPU_Id : System.Multiprocessors.CPU);
-   --  Start given CPU
+   procedure Poke_Handler;
+   --  Handler for the Poke interrupt
 
    procedure Start_All_CPUs;
    pragma Export (C, Start_All_CPUs, "__gnat_start_slave_cpus");

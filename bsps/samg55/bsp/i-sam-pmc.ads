@@ -5,8 +5,8 @@
 --  This spec has been automatically generated from ATSAMG55J19.svd
 
 pragma Ada_2012;
+pragma Style_Checks (Off);
 
-with Interfaces.Bit_Types;
 with System;
 
 --  Power Management Controller
@@ -17,14 +17,6 @@ package Interfaces.SAM.PMC is
    ---------------
    -- Registers --
    ---------------
-
-   -----------------------
-   -- PMC_SCER_Register --
-   -----------------------
-
-   ------------------
-   -- PMC_SCER.PCK --
-   ------------------
 
    --  PMC_SCER_PCK array
    type PMC_SCER_PCK_Field_Array is array (0 .. 7) of Boolean
@@ -37,7 +29,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PCK as a value
-            Val : Interfaces.Bit_Types.Byte;
+            Val : Interfaces.SAM.Byte;
          when True =>
             --  PCK as an array
             Arr : PMC_SCER_PCK_Field_Array;
@@ -53,16 +45,16 @@ package Interfaces.SAM.PMC is
    --  System Clock Enable Register
    type PMC_SCER_Register is record
       --  unspecified
-      Reserved_0_5   : Interfaces.Bit_Types.UInt6 := 16#20#;
+      Reserved_0_5   : Interfaces.SAM.UInt6 := 16#0#;
       --  Write-only. USB Host Port Clock Enable
-      UHP            : Boolean := True;
+      UHP            : Boolean := False;
       --  Write-only. USB Device Port Clock Enable
-      UDP            : Boolean := True;
+      UDP            : Boolean := False;
       --  Write-only. Programmable Clock 0 Output Enable
       PCK            : PMC_SCER_PCK_Field :=
-                        (As_Array => False, Val => 16#1#);
+                        (As_Array => False, Val => 16#0#);
       --  unspecified
-      Reserved_16_31 : Interfaces.Bit_Types.Short := 16#5FF#;
+      Reserved_16_31 : Interfaces.SAM.UInt16 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -75,14 +67,6 @@ package Interfaces.SAM.PMC is
       Reserved_16_31 at 0 range 16 .. 31;
    end record;
 
-   -----------------------
-   -- PMC_SCDR_Register --
-   -----------------------
-
-   ------------------
-   -- PMC_SCDR.PCK --
-   ------------------
-
    --  PMC_SCDR_PCK array
    type PMC_SCDR_PCK_Field_Array is array (0 .. 7) of Boolean
      with Component_Size => 1, Size => 8;
@@ -94,7 +78,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PCK as a value
-            Val : Interfaces.Bit_Types.Byte;
+            Val : Interfaces.SAM.Byte;
          when True =>
             --  PCK as an array
             Arr : PMC_SCDR_PCK_Field_Array;
@@ -110,16 +94,16 @@ package Interfaces.SAM.PMC is
    --  System Clock Disable Register
    type PMC_SCDR_Register is record
       --  unspecified
-      Reserved_0_5   : Interfaces.Bit_Types.UInt6 := 16#20#;
+      Reserved_0_5   : Interfaces.SAM.UInt6 := 16#0#;
       --  Write-only. USB Host Port Clock Disable
-      UHP            : Boolean := True;
+      UHP            : Boolean := False;
       --  Write-only.
-      UDP            : Boolean := True;
+      UDP            : Boolean := False;
       --  Write-only. Programmable Clock 0 Output Disable
       PCK            : PMC_SCDR_PCK_Field :=
-                        (As_Array => False, Val => 16#1#);
+                        (As_Array => False, Val => 16#0#);
       --  unspecified
-      Reserved_16_31 : Interfaces.Bit_Types.Short := 16#5FF#;
+      Reserved_16_31 : Interfaces.SAM.UInt16 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -132,14 +116,6 @@ package Interfaces.SAM.PMC is
       Reserved_16_31 at 0 range 16 .. 31;
    end record;
 
-   -----------------------
-   -- PMC_SCSR_Register --
-   -----------------------
-
-   ------------------
-   -- PMC_SCSR.PCK --
-   ------------------
-
    --  PMC_SCSR_PCK array
    type PMC_SCSR_PCK_Field_Array is array (0 .. 7) of Boolean
      with Component_Size => 1, Size => 8;
@@ -151,7 +127,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PCK as a value
-            Val : Interfaces.Bit_Types.Byte;
+            Val : Interfaces.SAM.Byte;
          when True =>
             --  PCK as an array
             Arr : PMC_SCSR_PCK_Field_Array;
@@ -167,16 +143,15 @@ package Interfaces.SAM.PMC is
    --  System Clock Status Register
    type PMC_SCSR_Register is record
       --  unspecified
-      Reserved_0_5   : Interfaces.Bit_Types.UInt6;
+      Reserved_0_5   : Interfaces.SAM.UInt6;
       --  Read-only. USB Host Port Clock Status
-      UHP            : Boolean := False;
+      UHP            : Boolean;
       --  Read-only.
-      UDP            : Boolean := False;
+      UDP            : Boolean;
       --  Read-only. Programmable Clock 0 Output Status
-      PCK            : PMC_SCSR_PCK_Field :=
-                        (As_Array => False, Val => 16#0#);
+      PCK            : PMC_SCSR_PCK_Field;
       --  unspecified
-      Reserved_16_31 : Interfaces.Bit_Types.Short;
+      Reserved_16_31 : Interfaces.SAM.UInt16;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -189,14 +164,6 @@ package Interfaces.SAM.PMC is
       Reserved_16_31 at 0 range 16 .. 31;
    end record;
 
-   ------------------------
-   -- PMC_PCER0_Register --
-   ------------------------
-
-   -------------------
-   -- PMC_PCER0.PID --
-   -------------------
-
    --  PMC_PCER0_PID array
    type PMC_PCER0_PID_Field_Array is array (8 .. 29) of Boolean
      with Component_Size => 1, Size => 22;
@@ -208,7 +175,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PID as a value
-            Val : Interfaces.Bit_Types.UInt22;
+            Val : Interfaces.SAM.UInt22;
          when True =>
             --  PID as an array
             Arr : PMC_PCER0_PID_Field_Array;
@@ -224,12 +191,12 @@ package Interfaces.SAM.PMC is
    --  Peripheral Clock Enable Register 0
    type PMC_PCER0_Register is record
       --  unspecified
-      Reserved_0_7   : Interfaces.Bit_Types.Byte := 16#E0#;
+      Reserved_0_7   : Interfaces.SAM.Byte := 16#0#;
       --  Write-only. Peripheral Clock 8 Enable
       PID            : PMC_PCER0_PID_Field :=
-                        (As_Array => False, Val => 16#1#);
+                        (As_Array => False, Val => 16#0#);
       --  unspecified
-      Reserved_30_31 : Interfaces.Bit_Types.UInt2 := 16#0#;
+      Reserved_30_31 : Interfaces.SAM.UInt2 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -239,14 +206,6 @@ package Interfaces.SAM.PMC is
       PID            at 0 range 8 .. 29;
       Reserved_30_31 at 0 range 30 .. 31;
    end record;
-
-   ------------------------
-   -- PMC_PCDR0_Register --
-   ------------------------
-
-   -------------------
-   -- PMC_PCDR0.PID --
-   -------------------
 
    --  PMC_PCDR0_PID array
    type PMC_PCDR0_PID_Field_Array is array (8 .. 29) of Boolean
@@ -259,7 +218,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PID as a value
-            Val : Interfaces.Bit_Types.UInt22;
+            Val : Interfaces.SAM.UInt22;
          when True =>
             --  PID as an array
             Arr : PMC_PCDR0_PID_Field_Array;
@@ -275,12 +234,12 @@ package Interfaces.SAM.PMC is
    --  Peripheral Clock Disable Register 0
    type PMC_PCDR0_Register is record
       --  unspecified
-      Reserved_0_7   : Interfaces.Bit_Types.Byte := 16#E0#;
+      Reserved_0_7   : Interfaces.SAM.Byte := 16#0#;
       --  Write-only. Peripheral Clock 8 Disable
       PID            : PMC_PCDR0_PID_Field :=
-                        (As_Array => False, Val => 16#1#);
+                        (As_Array => False, Val => 16#0#);
       --  unspecified
-      Reserved_30_31 : Interfaces.Bit_Types.UInt2 := 16#0#;
+      Reserved_30_31 : Interfaces.SAM.UInt2 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -290,14 +249,6 @@ package Interfaces.SAM.PMC is
       PID            at 0 range 8 .. 29;
       Reserved_30_31 at 0 range 30 .. 31;
    end record;
-
-   ------------------------
-   -- PMC_PCSR0_Register --
-   ------------------------
-
-   -------------------
-   -- PMC_PCSR0.PID --
-   -------------------
 
    --  PMC_PCSR0_PID array
    type PMC_PCSR0_PID_Field_Array is array (8 .. 29) of Boolean
@@ -310,7 +261,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PID as a value
-            Val : Interfaces.Bit_Types.UInt22;
+            Val : Interfaces.SAM.UInt22;
          when True =>
             --  PID as an array
             Arr : PMC_PCSR0_PID_Field_Array;
@@ -326,12 +277,11 @@ package Interfaces.SAM.PMC is
    --  Peripheral Clock Status Register 0
    type PMC_PCSR0_Register is record
       --  unspecified
-      Reserved_0_7   : Interfaces.Bit_Types.Byte;
+      Reserved_0_7   : Interfaces.SAM.Byte;
       --  Read-only. Peripheral Clock 8 Status
-      PID            : PMC_PCSR0_PID_Field :=
-                        (As_Array => False, Val => 16#0#);
+      PID            : PMC_PCSR0_PID_Field;
       --  unspecified
-      Reserved_30_31 : Interfaces.Bit_Types.UInt2;
+      Reserved_30_31 : Interfaces.SAM.UInt2;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -342,38 +292,34 @@ package Interfaces.SAM.PMC is
       Reserved_30_31 at 0 range 30 .. 31;
    end record;
 
-   -----------------------
-   -- CKGR_MOR_Register --
-   -----------------------
-
    --  Main On-Chip RC Oscillator Frequency Selection
-   type MOSCRCF_Field is
+   type CKGR_MOR_MOSCRCF_Field is
      (
       --  The Fast RC Oscillator Frequency is at 8 MHz (default)
-      MOSCRCF_Field_8_Mhz,
+      CKGR_MOR_MOSCRCF_Field_8_Mhz,
       --  The Fast RC Oscillator Frequency is at 16 MHz
-      MOSCRCF_Field_16_Mhz,
+      CKGR_MOR_MOSCRCF_Field_16_Mhz,
       --  The Fast RC Oscillator Frequency is at 24 MHz
-      MOSCRCF_Field_24_Mhz)
+      CKGR_MOR_MOSCRCF_Field_24_Mhz)
      with Size => 3;
-   for MOSCRCF_Field use
-     (MOSCRCF_Field_8_Mhz => 0,
-      MOSCRCF_Field_16_Mhz => 1,
-      MOSCRCF_Field_24_Mhz => 2);
+   for CKGR_MOR_MOSCRCF_Field use
+     (CKGR_MOR_MOSCRCF_Field_8_Mhz => 0,
+      CKGR_MOR_MOSCRCF_Field_16_Mhz => 1,
+      CKGR_MOR_MOSCRCF_Field_24_Mhz => 2);
 
-   subtype CKGR_MOR_MOSCXTST_Field is Interfaces.Bit_Types.Byte;
+   subtype CKGR_MOR_MOSCXTST_Field is Interfaces.SAM.Byte;
 
    --  Write Access Password
-   type KEY_Field is
+   type CKGR_MOR_KEY_Field is
      (
       --  Reset value for the field
-      Key_Field_Reset,
+      Ckgr_Mor_Key_Field_Reset,
       --  Writing any other value in this field aborts the write
       --  operation.Always reads as 0.
       Passwd)
      with Size => 8;
-   for KEY_Field use
-     (Key_Field_Reset => 0,
+   for CKGR_MOR_KEY_Field use
+     (Ckgr_Mor_Key_Field_Reset => 0,
       Passwd => 55);
 
    --  Main Oscillator Register
@@ -387,19 +333,20 @@ package Interfaces.SAM.PMC is
       --  Main On-Chip RC Oscillator Enable
       MOSCRCEN       : Boolean := True;
       --  Main On-Chip RC Oscillator Frequency Selection
-      MOSCRCF        : MOSCRCF_Field := MOSCRCF_Field_8_Mhz;
+      MOSCRCF        : CKGR_MOR_MOSCRCF_Field :=
+                        Interfaces.SAM.PMC.CKGR_MOR_MOSCRCF_Field_8_Mhz;
       --  unspecified
-      Reserved_7_7   : Interfaces.Bit_Types.Bit := 16#0#;
+      Reserved_7_7   : Interfaces.SAM.Bit := 16#0#;
       --  Main Crystal Oscillator Start-up Time
       MOSCXTST       : CKGR_MOR_MOSCXTST_Field := 16#0#;
       --  Write Access Password
-      KEY            : KEY_Field := Key_Field_Reset;
+      KEY            : CKGR_MOR_KEY_Field := Ckgr_Mor_Key_Field_Reset;
       --  Main Oscillator Selection
       MOSCSEL        : Boolean := False;
       --  Clock Failure Detector Enable
       CFDEN          : Boolean := False;
       --  unspecified
-      Reserved_26_31 : Interfaces.Bit_Types.UInt6 := 16#0#;
+      Reserved_26_31 : Interfaces.SAM.UInt6 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -418,11 +365,7 @@ package Interfaces.SAM.PMC is
       Reserved_26_31 at 0 range 26 .. 31;
    end record;
 
-   ------------------------
-   -- CKGR_MCFR_Register --
-   ------------------------
-
-   subtype CKGR_MCFR_MAINF_Field is Interfaces.Bit_Types.Short;
+   subtype CKGR_MCFR_MAINF_Field is Interfaces.SAM.UInt16;
 
    --  Main Clock Frequency Register
    type CKGR_MCFR_Register is record
@@ -431,11 +374,11 @@ package Interfaces.SAM.PMC is
       --  Main Clock Frequency Measure Ready
       MAINFRDY       : Boolean := False;
       --  unspecified
-      Reserved_17_19 : Interfaces.Bit_Types.UInt3 := 16#0#;
+      Reserved_17_19 : Interfaces.SAM.UInt3 := 16#0#;
       --  RC Oscillator Frequency Measure (write-only)
       RCMEAS         : Boolean := False;
       --  unspecified
-      Reserved_21_31 : Interfaces.Bit_Types.UInt11 := 16#0#;
+      Reserved_21_31 : Interfaces.SAM.UInt11 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -448,13 +391,9 @@ package Interfaces.SAM.PMC is
       Reserved_21_31 at 0 range 21 .. 31;
    end record;
 
-   -------------------------
-   -- CKGR_PLLAR_Register --
-   -------------------------
-
-   subtype CKGR_PLLAR_PLLAEN_Field is Interfaces.Bit_Types.Byte;
-   subtype CKGR_PLLAR_PLLACOUNT_Field is Interfaces.Bit_Types.UInt6;
-   subtype CKGR_PLLAR_MULA_Field is Interfaces.Bit_Types.UInt12;
+   subtype CKGR_PLLAR_PLLAEN_Field is Interfaces.SAM.Byte;
+   subtype CKGR_PLLAR_PLLACOUNT_Field is Interfaces.SAM.UInt6;
+   subtype CKGR_PLLAR_MULA_Field is Interfaces.SAM.UInt12;
 
    --  PLLA Register
    type CKGR_PLLAR_Register is record
@@ -463,15 +402,15 @@ package Interfaces.SAM.PMC is
       --  PLLA Counter
       PLLACOUNT      : CKGR_PLLAR_PLLACOUNT_Field := 16#3F#;
       --  unspecified
-      Reserved_14_15 : Interfaces.Bit_Types.UInt2 := 16#0#;
+      Reserved_14_15 : Interfaces.SAM.UInt2 := 16#0#;
       --  PLLA Multiplier
       MULA           : CKGR_PLLAR_MULA_Field := 16#0#;
       --  unspecified
-      Reserved_28_28 : Interfaces.Bit_Types.Bit := 16#0#;
+      Reserved_28_28 : Interfaces.SAM.Bit := 16#0#;
       --  Must be written to 0
       ZERO           : Boolean := False;
       --  unspecified
-      Reserved_30_31 : Interfaces.Bit_Types.UInt2 := 16#0#;
+      Reserved_30_31 : Interfaces.SAM.UInt2 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -486,13 +425,9 @@ package Interfaces.SAM.PMC is
       Reserved_30_31 at 0 range 30 .. 31;
    end record;
 
-   -------------------------
-   -- CKGR_PLLBR_Register --
-   -------------------------
-
-   subtype CKGR_PLLBR_PLLBEN_Field is Interfaces.Bit_Types.Byte;
-   subtype CKGR_PLLBR_PLLBCOUNT_Field is Interfaces.Bit_Types.UInt6;
-   subtype CKGR_PLLBR_MULB_Field is Interfaces.Bit_Types.UInt11;
+   subtype CKGR_PLLBR_PLLBEN_Field is Interfaces.SAM.Byte;
+   subtype CKGR_PLLBR_PLLBCOUNT_Field is Interfaces.SAM.UInt6;
+   subtype CKGR_PLLBR_MULB_Field is Interfaces.SAM.UInt11;
 
    --  PLLB Register
    type CKGR_PLLBR_Register is record
@@ -501,15 +436,15 @@ package Interfaces.SAM.PMC is
       --  PLLB Counter
       PLLBCOUNT      : CKGR_PLLBR_PLLBCOUNT_Field := 16#3F#;
       --  unspecified
-      Reserved_14_15 : Interfaces.Bit_Types.UInt2 := 16#0#;
+      Reserved_14_15 : Interfaces.SAM.UInt2 := 16#0#;
       --  PLLB Multiplier
       MULB           : CKGR_PLLBR_MULB_Field := 16#0#;
       --  unspecified
-      Reserved_27_28 : Interfaces.Bit_Types.UInt2 := 16#0#;
+      Reserved_27_28 : Interfaces.SAM.UInt2 := 16#0#;
       --  Must be written to 0
       ZERO           : Boolean := False;
       --  unspecified
-      Reserved_30_31 : Interfaces.Bit_Types.UInt2 := 16#0#;
+      Reserved_30_31 : Interfaces.SAM.UInt2 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -524,12 +459,8 @@ package Interfaces.SAM.PMC is
       Reserved_30_31 at 0 range 30 .. 31;
    end record;
 
-   -----------------------
-   -- PMC_MCKR_Register --
-   -----------------------
-
    --  Master Clock Source Selection
-   type CSS_Field is
+   type PMC_MCKR_CSS_Field is
      (
       --  Slow Clock is selected
       Slow_Clk,
@@ -540,14 +471,14 @@ package Interfaces.SAM.PMC is
       --  PLLBClock is selected
       Pllb_Clk)
      with Size => 2;
-   for CSS_Field use
+   for PMC_MCKR_CSS_Field use
      (Slow_Clk => 0,
       Main_Clk => 1,
       Plla_Clk => 2,
       Pllb_Clk => 3);
 
    --  Processor Clock Prescaler
-   type PRES_Field is
+   type PMC_MCKR_PRES_Field is
      (
       --  Selected clock
       Clk_1,
@@ -566,7 +497,7 @@ package Interfaces.SAM.PMC is
       --  Selected clock divided by 3
       Clk_3)
      with Size => 3;
-   for PRES_Field use
+   for PMC_MCKR_PRES_Field use
      (Clk_1 => 0,
       Clk_2 => 1,
       Clk_4 => 2,
@@ -579,18 +510,18 @@ package Interfaces.SAM.PMC is
    --  Master Clock Register
    type PMC_MCKR_Register is record
       --  Master Clock Source Selection
-      CSS            : CSS_Field := Main_Clk;
+      CSS            : PMC_MCKR_CSS_Field := Interfaces.SAM.PMC.Main_Clk;
       --  unspecified
-      Reserved_2_3   : Interfaces.Bit_Types.UInt2 := 16#0#;
+      Reserved_2_3   : Interfaces.SAM.UInt2 := 16#0#;
       --  Processor Clock Prescaler
-      PRES           : PRES_Field := Clk_1;
+      PRES           : PMC_MCKR_PRES_Field := Interfaces.SAM.PMC.Clk_1;
       --  unspecified
-      Reserved_7_11  : Interfaces.Bit_Types.UInt5 := 16#0#;
+      Reserved_7_11  : Interfaces.SAM.UInt5 := 16#0#;
       --  PLLA Divisor by 2
       PLLADIV2       : Boolean := False;
       PLLBDIV2       : Boolean := False;
       --  unspecified
-      Reserved_14_31 : Interfaces.Bit_Types.UInt18 := 16#0#;
+      Reserved_14_31 : Interfaces.SAM.UInt18 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -605,22 +536,18 @@ package Interfaces.SAM.PMC is
       Reserved_14_31 at 0 range 14 .. 31;
    end record;
 
-   ----------------------
-   -- PMC_USB_Register --
-   ----------------------
-
-   subtype PMC_USB_USBDIV_Field is Interfaces.Bit_Types.UInt4;
+   subtype PMC_USB_USBDIV_Field is Interfaces.SAM.UInt4;
 
    --  USB Clock Register
    type PMC_USB_Register is record
       --  USB Input Clock Selection
       USBS           : Boolean := False;
       --  unspecified
-      Reserved_1_7   : Interfaces.Bit_Types.UInt7 := 16#0#;
+      Reserved_1_7   : Interfaces.SAM.UInt7 := 16#0#;
       --  Divider for USB Clock
       USBDIV         : PMC_USB_USBDIV_Field := 16#0#;
       --  unspecified
-      Reserved_12_31 : Interfaces.Bit_Types.UInt20 := 16#0#;
+      Reserved_12_31 : Interfaces.SAM.UInt20 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -632,12 +559,8 @@ package Interfaces.SAM.PMC is
       Reserved_12_31 at 0 range 12 .. 31;
    end record;
 
-   ----------------------
-   -- PMC_PCK_Register --
-   ----------------------
-
    --  Master Clock Source Selection
-   type CSS_Field_1 is
+   type PMC_PCK_CSS_Field is
      (
       --  Slow Clock is selected
       Slow_Clk,
@@ -650,25 +573,25 @@ package Interfaces.SAM.PMC is
       --  Master Clock is selected
       Mck)
      with Size => 3;
-   for CSS_Field_1 use
+   for PMC_PCK_CSS_Field use
      (Slow_Clk => 0,
       Main_Clk => 1,
       Plla_Clk => 2,
       Pllb_Clk => 3,
       Mck => 4);
 
-   subtype PMC_PCK_PRES_Field is Interfaces.Bit_Types.Byte;
+   subtype PMC_PCK_PRES_Field is Interfaces.SAM.Byte;
 
    --  Programmable Clock 0 Register
    type PMC_PCK_Register is record
       --  Master Clock Source Selection
-      CSS            : CSS_Field_1 := Slow_Clk;
+      CSS            : PMC_PCK_CSS_Field := Interfaces.SAM.PMC.Slow_Clk;
       --  unspecified
-      Reserved_3_3   : Interfaces.Bit_Types.Bit := 16#0#;
+      Reserved_3_3   : Interfaces.SAM.Bit := 16#0#;
       --  Programmable Clock Prescaler
-      PRES           : PMC_PCK_PRES_Field := 16#3E#;
+      PRES           : PMC_PCK_PRES_Field := 16#0#;
       --  unspecified
-      Reserved_12_31 : Interfaces.Bit_Types.UInt20 := 16#5FFB#;
+      Reserved_12_31 : Interfaces.SAM.UInt20 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -683,14 +606,6 @@ package Interfaces.SAM.PMC is
    --  Programmable Clock 0 Register
    type PMC_PCK_Registers is array (0 .. 7) of PMC_PCK_Register;
 
-   ----------------------
-   -- PMC_IER_Register --
-   ----------------------
-
-   --------------------
-   -- PMC_IER.PCKRDY --
-   --------------------
-
    --  PMC_IER_PCKRDY array
    type PMC_IER_PCKRDY_Field_Array is array (0 .. 7) of Boolean
      with Component_Size => 1, Size => 8;
@@ -702,7 +617,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PCKRDY as a value
-            Val : Interfaces.Bit_Types.Byte;
+            Val : Interfaces.SAM.Byte;
          when True =>
             --  PCKRDY as an array
             Arr : PMC_IER_PCKRDY_Field_Array;
@@ -726,18 +641,18 @@ package Interfaces.SAM.PMC is
       --  Write-only. Master Clock Ready Interrupt Enable
       MCKRDY         : Boolean := False;
       --  unspecified
-      Reserved_4_7   : Interfaces.Bit_Types.UInt4 := 16#E#;
+      Reserved_4_7   : Interfaces.SAM.UInt4 := 16#0#;
       --  Write-only. Programmable Clock Ready 0 Interrupt Enable
       PCKRDY         : PMC_IER_PCKRDY_Field :=
-                        (As_Array => False, Val => 16#1#);
+                        (As_Array => False, Val => 16#0#);
       --  Write-only. Main Oscillator Selection Status Interrupt Enable
-      MOSCSELS       : Boolean := True;
+      MOSCSELS       : Boolean := False;
       --  Write-only. Main On-Chip RC Status Interrupt Enable
-      MOSCRCS        : Boolean := True;
+      MOSCRCS        : Boolean := False;
       --  Write-only. Clock Failure Detector Event Interrupt Enable
-      CFDEV          : Boolean := True;
+      CFDEV          : Boolean := False;
       --  unspecified
-      Reserved_19_31 : Interfaces.Bit_Types.UInt13 := 16#BF#;
+      Reserved_19_31 : Interfaces.SAM.UInt13 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -755,14 +670,6 @@ package Interfaces.SAM.PMC is
       Reserved_19_31 at 0 range 19 .. 31;
    end record;
 
-   ----------------------
-   -- PMC_IDR_Register --
-   ----------------------
-
-   --------------------
-   -- PMC_IDR.PCKRDY --
-   --------------------
-
    --  PMC_IDR_PCKRDY array
    type PMC_IDR_PCKRDY_Field_Array is array (0 .. 7) of Boolean
      with Component_Size => 1, Size => 8;
@@ -774,7 +681,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PCKRDY as a value
-            Val : Interfaces.Bit_Types.Byte;
+            Val : Interfaces.SAM.Byte;
          when True =>
             --  PCKRDY as an array
             Arr : PMC_IDR_PCKRDY_Field_Array;
@@ -798,18 +705,18 @@ package Interfaces.SAM.PMC is
       --  Write-only. Master Clock Ready Interrupt Disable
       MCKRDY         : Boolean := False;
       --  unspecified
-      Reserved_4_7   : Interfaces.Bit_Types.UInt4 := 16#E#;
+      Reserved_4_7   : Interfaces.SAM.UInt4 := 16#0#;
       --  Write-only. Programmable Clock Ready 0 Interrupt Disable
       PCKRDY         : PMC_IDR_PCKRDY_Field :=
-                        (As_Array => False, Val => 16#1#);
+                        (As_Array => False, Val => 16#0#);
       --  Write-only. Main Oscillator Selection Status Interrupt Disable
-      MOSCSELS       : Boolean := True;
+      MOSCSELS       : Boolean := False;
       --  Write-only. Main On-Chip RC Status Interrupt Disable
-      MOSCRCS        : Boolean := True;
+      MOSCRCS        : Boolean := False;
       --  Write-only. Clock Failure Detector Event Interrupt Disable
-      CFDEV          : Boolean := True;
+      CFDEV          : Boolean := False;
       --  unspecified
-      Reserved_19_31 : Interfaces.Bit_Types.UInt13 := 16#BF#;
+      Reserved_19_31 : Interfaces.SAM.UInt13 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -827,14 +734,6 @@ package Interfaces.SAM.PMC is
       Reserved_19_31 at 0 range 19 .. 31;
    end record;
 
-   ---------------------
-   -- PMC_SR_Register --
-   ---------------------
-
-   -------------------
-   -- PMC_SR.PCKRDY --
-   -------------------
-
    --  PMC_SR_PCKRDY array
    type PMC_SR_PCKRDY_Field_Array is array (0 .. 7) of Boolean
      with Component_Size => 1, Size => 8;
@@ -846,7 +745,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PCKRDY as a value
-            Val : Interfaces.Bit_Types.Byte;
+            Val : Interfaces.SAM.Byte;
          when True =>
             --  PCKRDY as an array
             Arr : PMC_SR_PCKRDY_Field_Array;
@@ -862,32 +761,31 @@ package Interfaces.SAM.PMC is
    --  Status Register
    type PMC_SR_Register is record
       --  Read-only. Main Crystal Oscillator Status
-      MOSCXTS        : Boolean := False;
+      MOSCXTS        : Boolean;
       --  Read-only. PLLA Lock Status
-      LOCKA          : Boolean := False;
+      LOCKA          : Boolean;
       --  Read-only. PLLB Lock Status
-      LOCKB          : Boolean := False;
+      LOCKB          : Boolean;
       --  Read-only. Master Clock Status
-      MCKRDY         : Boolean := True;
+      MCKRDY         : Boolean;
       --  unspecified
-      Reserved_4_6   : Interfaces.Bit_Types.UInt3;
+      Reserved_4_6   : Interfaces.SAM.UInt3;
       --  Read-only. Slow Clock Oscillator Selection
-      OSCSELS        : Boolean := False;
+      OSCSELS        : Boolean;
       --  Read-only. Programmable Clock Ready Status
-      PCKRDY         : PMC_SR_PCKRDY_Field :=
-                        (As_Array => False, Val => 16#0#);
+      PCKRDY         : PMC_SR_PCKRDY_Field;
       --  Read-only. Main Oscillator Selection Status
-      MOSCSELS       : Boolean := True;
+      MOSCSELS       : Boolean;
       --  Read-only. Main On-Chip RC Oscillator Status
-      MOSCRCS        : Boolean := True;
+      MOSCRCS        : Boolean;
       --  Read-only. Clock Failure Detector Event
-      CFDEV          : Boolean := False;
+      CFDEV          : Boolean;
       --  Read-only. Clock Failure Detector Status
-      CFDS           : Boolean := False;
+      CFDS           : Boolean;
       --  Read-only. Clock Failure Detector Fault Output Status
-      FOS            : Boolean := False;
+      FOS            : Boolean;
       --  unspecified
-      Reserved_21_31 : Interfaces.Bit_Types.UInt11;
+      Reserved_21_31 : Interfaces.SAM.UInt11;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -908,14 +806,6 @@ package Interfaces.SAM.PMC is
       Reserved_21_31 at 0 range 21 .. 31;
    end record;
 
-   ----------------------
-   -- PMC_IMR_Register --
-   ----------------------
-
-   --------------------
-   -- PMC_IMR.PCKRDY --
-   --------------------
-
    --  PMC_IMR_PCKRDY array
    type PMC_IMR_PCKRDY_Field_Array is array (0 .. 2) of Boolean
      with Component_Size => 1, Size => 3;
@@ -927,7 +817,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PCKRDY as a value
-            Val : Interfaces.Bit_Types.UInt3;
+            Val : Interfaces.SAM.UInt3;
          when True =>
             --  PCKRDY as an array
             Arr : PMC_IMR_PCKRDY_Field_Array;
@@ -943,28 +833,27 @@ package Interfaces.SAM.PMC is
    --  Interrupt Mask Register
    type PMC_IMR_Register is record
       --  Read-only. Main Crystal Oscillator Status Interrupt Mask
-      MOSCXTS        : Boolean := False;
+      MOSCXTS        : Boolean;
       --  Read-only. PLLA Lock Interrupt Mask
-      LOCKA          : Boolean := False;
+      LOCKA          : Boolean;
       --  Read-only. PLLB Lock Interrupt Mask
-      LOCKB          : Boolean := False;
+      LOCKB          : Boolean;
       --  Read-only. Master Clock Ready Interrupt Mask
-      MCKRDY         : Boolean := False;
+      MCKRDY         : Boolean;
       --  unspecified
-      Reserved_4_7   : Interfaces.Bit_Types.UInt4;
+      Reserved_4_7   : Interfaces.SAM.UInt4;
       --  Read-only. Programmable Clock Ready 0 Interrupt Mask
-      PCKRDY         : PMC_IMR_PCKRDY_Field :=
-                        (As_Array => False, Val => 16#0#);
+      PCKRDY         : PMC_IMR_PCKRDY_Field;
       --  unspecified
-      Reserved_11_15 : Interfaces.Bit_Types.UInt5;
+      Reserved_11_15 : Interfaces.SAM.UInt5;
       --  Read-only. Main Oscillator Selection Status Interrupt Mask
-      MOSCSELS       : Boolean := False;
+      MOSCSELS       : Boolean;
       --  Read-only. Main On-Chip RC Status Interrupt Mask
-      MOSCRCS        : Boolean := False;
+      MOSCRCS        : Boolean;
       --  Read-only. Clock Failure Detector Event Interrupt Mask
-      CFDEV          : Boolean := False;
+      CFDEV          : Boolean;
       --  unspecified
-      Reserved_19_31 : Interfaces.Bit_Types.UInt13;
+      Reserved_19_31 : Interfaces.SAM.UInt13;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -983,14 +872,6 @@ package Interfaces.SAM.PMC is
       Reserved_19_31 at 0 range 19 .. 31;
    end record;
 
-   -----------------------
-   -- PMC_FSMR_Register --
-   -----------------------
-
-   -------------------
-   -- PMC_FSMR.FSTT --
-   -------------------
-
    --  PMC_FSMR_FSTT array
    type PMC_FSMR_FSTT_Field_Array is array (0 .. 15) of Boolean
      with Component_Size => 1, Size => 16;
@@ -1002,7 +883,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  FSTT as a value
-            Val : Interfaces.Bit_Types.Short;
+            Val : Interfaces.SAM.UInt16;
          when True =>
             --  FSTT as an array
             Arr : PMC_FSMR_FSTT_Field_Array;
@@ -1016,7 +897,7 @@ package Interfaces.SAM.PMC is
    end record;
 
    --  Flash Low-power Mode
-   type FLPM_Field is
+   type PMC_FSMR_FLPM_Field is
      (
       --  Flash is in Standby Mode when system enters Wait Mode
       Flash_Standby,
@@ -1025,7 +906,7 @@ package Interfaces.SAM.PMC is
       --  Idle mode
       Flash_Idle)
      with Size => 2;
-   for FLPM_Field use
+   for PMC_FSMR_FLPM_Field use
      (Flash_Standby => 0,
       Flash_Deep_Powerdown => 1,
       Flash_Idle => 2);
@@ -1042,13 +923,14 @@ package Interfaces.SAM.PMC is
       --  USB Alarm Enable
       USBAL          : Boolean := False;
       --  unspecified
-      Reserved_19_19 : Interfaces.Bit_Types.Bit := 16#0#;
+      Reserved_19_19 : Interfaces.SAM.Bit := 16#0#;
       --  Low-power Mode
       LPM            : Boolean := False;
       --  Flash Low-power Mode
-      FLPM           : FLPM_Field := Flash_Standby;
+      FLPM           : PMC_FSMR_FLPM_Field :=
+                        Interfaces.SAM.PMC.Flash_Standby;
       --  unspecified
-      Reserved_23_31 : Interfaces.Bit_Types.UInt9 := 16#0#;
+      Reserved_23_31 : Interfaces.SAM.UInt9 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1064,14 +946,6 @@ package Interfaces.SAM.PMC is
       Reserved_23_31 at 0 range 23 .. 31;
    end record;
 
-   -----------------------
-   -- PMC_FSPR_Register --
-   -----------------------
-
-   -------------------
-   -- PMC_FSPR.FSTP --
-   -------------------
-
    --  PMC_FSPR_FSTP array
    type PMC_FSPR_FSTP_Field_Array is array (0 .. 15) of Boolean
      with Component_Size => 1, Size => 16;
@@ -1083,7 +957,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  FSTP as a value
-            Val : Interfaces.Bit_Types.Short;
+            Val : Interfaces.SAM.UInt16;
          when True =>
             --  FSTP as an array
             Arr : PMC_FSPR_FSTP_Field_Array;
@@ -1102,7 +976,7 @@ package Interfaces.SAM.PMC is
       FSTP           : PMC_FSPR_FSTP_Field :=
                         (As_Array => False, Val => 16#0#);
       --  unspecified
-      Reserved_16_31 : Interfaces.Bit_Types.Short := 16#0#;
+      Reserved_16_31 : Interfaces.SAM.UInt16 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1112,16 +986,12 @@ package Interfaces.SAM.PMC is
       Reserved_16_31 at 0 range 16 .. 31;
    end record;
 
-   -----------------------
-   -- PMC_FOCR_Register --
-   -----------------------
-
    --  Fault Output Clear Register
    type PMC_FOCR_Register is record
       --  Write-only. Fault Output Clear
       FOCLR         : Boolean := False;
       --  unspecified
-      Reserved_1_31 : Interfaces.Bit_Types.UInt31 := 16#2FFD9F0#;
+      Reserved_1_31 : Interfaces.SAM.UInt31 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1131,21 +1001,17 @@ package Interfaces.SAM.PMC is
       Reserved_1_31 at 0 range 1 .. 31;
    end record;
 
-   -----------------------
-   -- PMC_WPMR_Register --
-   -----------------------
-
    --  Write Protection Key
-   type WPKEY_Field is
+   type PMC_WPMR_WPKEY_Field is
      (
       --  Reset value for the field
-      Wpkey_Field_Reset,
+      Pmc_Wpmr_Wpkey_Field_Reset,
       --  Writing any other value in this field aborts the write operation of
       --  the WPEN bit. Always reads as 0.
       Passwd)
      with Size => 24;
-   for WPKEY_Field use
-     (Wpkey_Field_Reset => 0,
+   for PMC_WPMR_WPKEY_Field use
+     (Pmc_Wpmr_Wpkey_Field_Reset => 0,
       Passwd => 5262659);
 
    --  Write Protection Mode Register
@@ -1153,9 +1019,9 @@ package Interfaces.SAM.PMC is
       --  Write Protection Enable
       WPEN         : Boolean := False;
       --  unspecified
-      Reserved_1_7 : Interfaces.Bit_Types.UInt7 := 16#0#;
+      Reserved_1_7 : Interfaces.SAM.UInt7 := 16#0#;
       --  Write Protection Key
-      WPKEY        : WPKEY_Field := Wpkey_Field_Reset;
+      WPKEY        : PMC_WPMR_WPKEY_Field := Pmc_Wpmr_Wpkey_Field_Reset;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1166,22 +1032,18 @@ package Interfaces.SAM.PMC is
       WPKEY        at 0 range 8 .. 31;
    end record;
 
-   -----------------------
-   -- PMC_WPSR_Register --
-   -----------------------
-
-   subtype PMC_WPSR_WPVSRC_Field is Interfaces.Bit_Types.Short;
+   subtype PMC_WPSR_WPVSRC_Field is Interfaces.SAM.UInt16;
 
    --  Write Protection Status Register
    type PMC_WPSR_Register is record
       --  Read-only. Write Protection Violation Status
-      WPVS           : Boolean := False;
+      WPVS           : Boolean;
       --  unspecified
-      Reserved_1_7   : Interfaces.Bit_Types.UInt7;
+      Reserved_1_7   : Interfaces.SAM.UInt7;
       --  Read-only. Write Protection Violation Source
-      WPVSRC         : PMC_WPSR_WPVSRC_Field := 16#0#;
+      WPVSRC         : PMC_WPSR_WPVSRC_Field;
       --  unspecified
-      Reserved_24_31 : Interfaces.Bit_Types.Byte;
+      Reserved_24_31 : Interfaces.SAM.Byte;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1193,14 +1055,10 @@ package Interfaces.SAM.PMC is
       Reserved_24_31 at 0 range 24 .. 31;
    end record;
 
-   ----------------------
-   -- PMC_PCR_Register --
-   ----------------------
-
-   subtype PMC_PCR_PID_Field is Interfaces.Bit_Types.UInt6;
+   subtype PMC_PCR_PID_Field is Interfaces.SAM.UInt6;
 
    --  Divisor Value
-   type DIV_Field is
+   type PMC_PCR_DIV_Field is
      (
       --  Peripheral clock is MCK
       Periph_Div_Mck,
@@ -1211,7 +1069,7 @@ package Interfaces.SAM.PMC is
       --  Peripheral clock is MCK/8
       Periph_Div8_Mck)
      with Size => 2;
-   for DIV_Field use
+   for PMC_PCR_DIV_Field use
      (Periph_Div_Mck => 0,
       Periph_Div2_Mck => 1,
       Periph_Div4_Mck => 2,
@@ -1222,19 +1080,19 @@ package Interfaces.SAM.PMC is
       --  Peripheral ID
       PID            : PMC_PCR_PID_Field := 16#0#;
       --  unspecified
-      Reserved_6_11  : Interfaces.Bit_Types.UInt6 := 16#0#;
+      Reserved_6_11  : Interfaces.SAM.UInt6 := 16#0#;
       --  Command
       CMD            : Boolean := False;
       --  unspecified
-      Reserved_13_15 : Interfaces.Bit_Types.UInt3 := 16#0#;
+      Reserved_13_15 : Interfaces.SAM.UInt3 := 16#0#;
       --  Divisor Value
-      DIV            : DIV_Field := Periph_Div_Mck;
+      DIV            : PMC_PCR_DIV_Field := Interfaces.SAM.PMC.Periph_Div_Mck;
       --  unspecified
-      Reserved_18_27 : Interfaces.Bit_Types.UInt10 := 16#0#;
+      Reserved_18_27 : Interfaces.SAM.UInt10 := 16#0#;
       --  Enable
       EN             : Boolean := False;
       --  unspecified
-      Reserved_29_31 : Interfaces.Bit_Types.UInt3 := 16#0#;
+      Reserved_29_31 : Interfaces.SAM.UInt3 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1250,13 +1108,9 @@ package Interfaces.SAM.PMC is
       Reserved_29_31 at 0 range 29 .. 31;
    end record;
 
-   ----------------------
-   -- PMC_OCR_Register --
-   ----------------------
-
-   subtype PMC_OCR_CAL8_Field is Interfaces.Bit_Types.UInt7;
-   subtype PMC_OCR_CAL16_Field is Interfaces.Bit_Types.UInt7;
-   subtype PMC_OCR_CAL24_Field is Interfaces.Bit_Types.UInt7;
+   subtype PMC_OCR_CAL8_Field is Interfaces.SAM.UInt7;
+   subtype PMC_OCR_CAL16_Field is Interfaces.SAM.UInt7;
+   subtype PMC_OCR_CAL24_Field is Interfaces.SAM.UInt7;
 
    --  Oscillator Calibration Register
    type PMC_OCR_Register is record
@@ -1273,7 +1127,7 @@ package Interfaces.SAM.PMC is
       --  Selection of RC Oscillator Calibration bits for 24 MHz
       SEL24          : Boolean := False;
       --  unspecified
-      Reserved_24_31 : Interfaces.Bit_Types.Byte := 16#0#;
+      Reserved_24_31 : Interfaces.SAM.Byte := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1288,14 +1142,6 @@ package Interfaces.SAM.PMC is
       Reserved_24_31 at 0 range 24 .. 31;
    end record;
 
-   ----------------------------
-   -- PMC_SLPWK_ER0_Register --
-   ----------------------------
-
-   -----------------------
-   -- PMC_SLPWK_ER0.PID --
-   -----------------------
-
    --  PMC_SLPWK_ER0_PID array
    type PMC_SLPWK_ER0_PID_Field_Array is array (8 .. 29) of Boolean
      with Component_Size => 1, Size => 22;
@@ -1307,7 +1153,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PID as a value
-            Val : Interfaces.Bit_Types.UInt22;
+            Val : Interfaces.SAM.UInt22;
          when True =>
             --  PID as an array
             Arr : PMC_SLPWK_ER0_PID_Field_Array;
@@ -1323,12 +1169,12 @@ package Interfaces.SAM.PMC is
    --  SleepWalking Enable Register 0
    type PMC_SLPWK_ER0_Register is record
       --  unspecified
-      Reserved_0_7   : Interfaces.Bit_Types.Byte := 16#E0#;
+      Reserved_0_7   : Interfaces.SAM.Byte := 16#0#;
       --  Write-only. Peripheral 8 SleepWalking Enable
       PID            : PMC_SLPWK_ER0_PID_Field :=
-                        (As_Array => False, Val => 16#1#);
+                        (As_Array => False, Val => 16#0#);
       --  unspecified
-      Reserved_30_31 : Interfaces.Bit_Types.UInt2 := 16#0#;
+      Reserved_30_31 : Interfaces.SAM.UInt2 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1338,14 +1184,6 @@ package Interfaces.SAM.PMC is
       PID            at 0 range 8 .. 29;
       Reserved_30_31 at 0 range 30 .. 31;
    end record;
-
-   ----------------------------
-   -- PMC_SLPWK_DR0_Register --
-   ----------------------------
-
-   -----------------------
-   -- PMC_SLPWK_DR0.PID --
-   -----------------------
 
    --  PMC_SLPWK_DR0_PID array
    type PMC_SLPWK_DR0_PID_Field_Array is array (8 .. 29) of Boolean
@@ -1358,7 +1196,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PID as a value
-            Val : Interfaces.Bit_Types.UInt22;
+            Val : Interfaces.SAM.UInt22;
          when True =>
             --  PID as an array
             Arr : PMC_SLPWK_DR0_PID_Field_Array;
@@ -1374,12 +1212,12 @@ package Interfaces.SAM.PMC is
    --  SleepWalking Disable Register 0
    type PMC_SLPWK_DR0_Register is record
       --  unspecified
-      Reserved_0_7   : Interfaces.Bit_Types.Byte := 16#E0#;
+      Reserved_0_7   : Interfaces.SAM.Byte := 16#0#;
       --  Write-only. Peripheral 8 SleepWalking Disable
       PID            : PMC_SLPWK_DR0_PID_Field :=
-                        (As_Array => False, Val => 16#1#);
+                        (As_Array => False, Val => 16#0#);
       --  unspecified
-      Reserved_30_31 : Interfaces.Bit_Types.UInt2 := 16#0#;
+      Reserved_30_31 : Interfaces.SAM.UInt2 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1389,14 +1227,6 @@ package Interfaces.SAM.PMC is
       PID            at 0 range 8 .. 29;
       Reserved_30_31 at 0 range 30 .. 31;
    end record;
-
-   ----------------------------
-   -- PMC_SLPWK_SR0_Register --
-   ----------------------------
-
-   -----------------------
-   -- PMC_SLPWK_SR0.PID --
-   -----------------------
 
    --  PMC_SLPWK_SR0_PID array
    type PMC_SLPWK_SR0_PID_Field_Array is array (8 .. 29) of Boolean
@@ -1409,7 +1239,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PID as a value
-            Val : Interfaces.Bit_Types.UInt22;
+            Val : Interfaces.SAM.UInt22;
          when True =>
             --  PID as an array
             Arr : PMC_SLPWK_SR0_PID_Field_Array;
@@ -1425,12 +1255,11 @@ package Interfaces.SAM.PMC is
    --  SleepWalking Status Register 0
    type PMC_SLPWK_SR0_Register is record
       --  unspecified
-      Reserved_0_7   : Interfaces.Bit_Types.Byte;
+      Reserved_0_7   : Interfaces.SAM.Byte;
       --  Read-only. Peripheral 8 SleepWalking Status
-      PID            : PMC_SLPWK_SR0_PID_Field :=
-                        (As_Array => False, Val => 16#0#);
+      PID            : PMC_SLPWK_SR0_PID_Field;
       --  unspecified
-      Reserved_30_31 : Interfaces.Bit_Types.UInt2;
+      Reserved_30_31 : Interfaces.SAM.UInt2;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1440,14 +1269,6 @@ package Interfaces.SAM.PMC is
       PID            at 0 range 8 .. 29;
       Reserved_30_31 at 0 range 30 .. 31;
    end record;
-
-   -----------------------------
-   -- PMC_SLPWK_ASR0_Register --
-   -----------------------------
-
-   ------------------------
-   -- PMC_SLPWK_ASR0.PID --
-   ------------------------
 
    --  PMC_SLPWK_ASR0_PID array
    type PMC_SLPWK_ASR0_PID_Field_Array is array (8 .. 29) of Boolean
@@ -1460,7 +1281,7 @@ package Interfaces.SAM.PMC is
       case As_Array is
          when False =>
             --  PID as a value
-            Val : Interfaces.Bit_Types.UInt22;
+            Val : Interfaces.SAM.UInt22;
          when True =>
             --  PID as an array
             Arr : PMC_SLPWK_ASR0_PID_Field_Array;
@@ -1476,12 +1297,11 @@ package Interfaces.SAM.PMC is
    --  SleepWalking Activity Status Register 0
    type PMC_SLPWK_ASR0_Register is record
       --  unspecified
-      Reserved_0_7   : Interfaces.Bit_Types.Byte;
+      Reserved_0_7   : Interfaces.SAM.Byte;
       --  Read-only. Peripheral 8 Activity Status
-      PID            : PMC_SLPWK_ASR0_PID_Field :=
-                        (As_Array => False, Val => 16#1#);
+      PID            : PMC_SLPWK_ASR0_PID_Field;
       --  unspecified
-      Reserved_30_31 : Interfaces.Bit_Types.UInt2;
+      Reserved_30_31 : Interfaces.SAM.UInt2;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1492,18 +1312,14 @@ package Interfaces.SAM.PMC is
       Reserved_30_31 at 0 range 30 .. 31;
    end record;
 
-   -----------------------
-   -- PMC_PMMR_Register --
-   -----------------------
-
-   subtype PMC_PMMR_PLLA_MMAX_Field is Interfaces.Bit_Types.UInt11;
+   subtype PMC_PMMR_PLLA_MMAX_Field is Interfaces.SAM.UInt11;
 
    --  PLL Maximum Multiplier Value Register
    type PMC_PMMR_Register is record
       --  PLLA Maximum Allowed Multiplier Value
       PLLA_MMAX      : PMC_PMMR_PLLA_MMAX_Field := 16#7FF#;
       --  unspecified
-      Reserved_11_31 : Interfaces.Bit_Types.UInt21 := 16#FFE0#;
+      Reserved_11_31 : Interfaces.SAM.UInt21 := 16#FFE0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -1581,35 +1397,35 @@ package Interfaces.SAM.PMC is
      with Volatile;
 
    for PMC_Peripheral use record
-      PMC_SCER       at 0 range 0 .. 31;
-      PMC_SCDR       at 4 range 0 .. 31;
-      PMC_SCSR       at 8 range 0 .. 31;
-      PMC_PCER0      at 16 range 0 .. 31;
-      PMC_PCDR0      at 20 range 0 .. 31;
-      PMC_PCSR0      at 24 range 0 .. 31;
-      CKGR_MOR       at 32 range 0 .. 31;
-      CKGR_MCFR      at 36 range 0 .. 31;
-      CKGR_PLLAR     at 40 range 0 .. 31;
-      CKGR_PLLBR     at 44 range 0 .. 31;
-      PMC_MCKR       at 48 range 0 .. 31;
-      PMC_USB        at 56 range 0 .. 31;
-      PMC_PCK        at 64 range 0 .. 255;
-      PMC_IER        at 96 range 0 .. 31;
-      PMC_IDR        at 100 range 0 .. 31;
-      PMC_SR         at 104 range 0 .. 31;
-      PMC_IMR        at 108 range 0 .. 31;
-      PMC_FSMR       at 112 range 0 .. 31;
-      PMC_FSPR       at 116 range 0 .. 31;
-      PMC_FOCR       at 120 range 0 .. 31;
-      PMC_WPMR       at 228 range 0 .. 31;
-      PMC_WPSR       at 232 range 0 .. 31;
-      PMC_PCR        at 268 range 0 .. 31;
-      PMC_OCR        at 272 range 0 .. 31;
-      PMC_SLPWK_ER0  at 276 range 0 .. 31;
-      PMC_SLPWK_DR0  at 280 range 0 .. 31;
-      PMC_SLPWK_SR0  at 284 range 0 .. 31;
-      PMC_SLPWK_ASR0 at 288 range 0 .. 31;
-      PMC_PMMR       at 304 range 0 .. 31;
+      PMC_SCER       at 16#0# range 0 .. 31;
+      PMC_SCDR       at 16#4# range 0 .. 31;
+      PMC_SCSR       at 16#8# range 0 .. 31;
+      PMC_PCER0      at 16#10# range 0 .. 31;
+      PMC_PCDR0      at 16#14# range 0 .. 31;
+      PMC_PCSR0      at 16#18# range 0 .. 31;
+      CKGR_MOR       at 16#20# range 0 .. 31;
+      CKGR_MCFR      at 16#24# range 0 .. 31;
+      CKGR_PLLAR     at 16#28# range 0 .. 31;
+      CKGR_PLLBR     at 16#2C# range 0 .. 31;
+      PMC_MCKR       at 16#30# range 0 .. 31;
+      PMC_USB        at 16#38# range 0 .. 31;
+      PMC_PCK        at 16#40# range 0 .. 255;
+      PMC_IER        at 16#60# range 0 .. 31;
+      PMC_IDR        at 16#64# range 0 .. 31;
+      PMC_SR         at 16#68# range 0 .. 31;
+      PMC_IMR        at 16#6C# range 0 .. 31;
+      PMC_FSMR       at 16#70# range 0 .. 31;
+      PMC_FSPR       at 16#74# range 0 .. 31;
+      PMC_FOCR       at 16#78# range 0 .. 31;
+      PMC_WPMR       at 16#E4# range 0 .. 31;
+      PMC_WPSR       at 16#E8# range 0 .. 31;
+      PMC_PCR        at 16#10C# range 0 .. 31;
+      PMC_OCR        at 16#110# range 0 .. 31;
+      PMC_SLPWK_ER0  at 16#114# range 0 .. 31;
+      PMC_SLPWK_DR0  at 16#118# range 0 .. 31;
+      PMC_SLPWK_SR0  at 16#11C# range 0 .. 31;
+      PMC_SLPWK_ASR0 at 16#120# range 0 .. 31;
+      PMC_PMMR       at 16#130# range 0 .. 31;
    end record;
 
    --  Power Management Controller

@@ -7,7 +7,7 @@
 --                                                                          --
 --                               B o d y                                    --
 --                                                                          --
---                    Copyright (C) 2010-2015, AdaCore                      --
+--                    Copyright (C) 2010-2016, AdaCore                      --
 --                                                                          --
 -- GNARL is free software; you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -33,7 +33,8 @@ with System.Multiprocessors.Spin_Locks;
 with System.OS_Interface;
 
 with System.BB.Protection;
-with System.BB.CPU_Primitives.Multiprocessors;
+with System.BB.CPU_Primitives;
+with System.BB.Board_Support;
 with System.BB.Threads.Queues;
 
 package body System.Tasking.Protected_Objects.Multiprocessors is
@@ -43,7 +44,6 @@ package body System.Tasking.Protected_Objects.Multiprocessors is
    use System.Multiprocessors.Fair_Locks;
 
    package STPO renames System.Task_Primitives.Operations;
-   package BCPRMU renames System.BB.CPU_Primitives.Multiprocessors;
 
    type Entry_Call_List is limited record
       List : Entry_Call_Link;
@@ -115,7 +115,7 @@ package body System.Tasking.Protected_Objects.Multiprocessors is
       then
          --  Poke the caller's CPU if the task has a higher priority
 
-         System.BB.CPU_Primitives.Multiprocessors.Poke_CPU (Caller_CPU);
+         System.BB.Board_Support.Multiprocessors.Poke_CPU (Caller_CPU);
       end if;
    end Served;
 
@@ -124,7 +124,8 @@ package body System.Tasking.Protected_Objects.Multiprocessors is
    -------------------------
 
    procedure Wakeup_Served_Entry is
-      CPU_Id     : constant CPU := BCPRMU.Current_CPU;
+      CPU_Id     : constant CPU :=
+                      BB.Board_Support.Multiprocessors.Current_CPU;
       Entry_Call : Entry_Call_Link;
 
    begin
@@ -138,6 +139,8 @@ package body System.Tasking.Protected_Objects.Multiprocessors is
       Unlock (Served_Entry_Call (CPU_Id).Lock);
 
       while Entry_Call /= null loop
+         --  ??? This may insert a task on the ready queue of a different
+         --  processor.
          STPO.Wakeup (Entry_Call.Self, Entry_Caller_Sleep);
          Entry_Call := Entry_Call.Next;
       end loop;

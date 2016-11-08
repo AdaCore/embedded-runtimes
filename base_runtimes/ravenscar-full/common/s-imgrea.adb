@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 B o d y                                  --
 --                                                                          --
---          Copyright (C) 1992-2015, Free Software Foundation, Inc.         --
+--          Copyright (C) 1992-2016, Free Software Foundation, Inc.         --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -477,7 +477,7 @@ package body System.Img_Real is
          --  an invalid bit pattern resulting from erroneous execution
          --  (caused by using uninitialized variables for example).
 
-         --  No matter what, we'll at least get reasonable behaviour,
+         --  No matter what, we'll at least get reasonable behavior,
          --  converting to infinity or some other value, or causing an
          --  exception to be raised is fine.
 

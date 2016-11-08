@@ -5,8 +5,8 @@
 --  This spec has been automatically generated from ATSAMG55J19.svd
 
 pragma Ada_2012;
+pragma Style_Checks (Off);
 
-with Interfaces.Bit_Types;
 with System;
 
 --  Embedded Flash Controller
@@ -18,34 +18,30 @@ package Interfaces.SAM.EFC is
    -- Registers --
    ---------------
 
-   ----------------------
-   -- EFC_FMR_Register --
-   ----------------------
-
-   subtype FMR_FWS_Field is Interfaces.Bit_Types.UInt4;
+   subtype EFC_FMR_FWS_Field is Interfaces.SAM.UInt4;
 
    --  EEFC Flash Mode Register
    type EFC_FMR_Register is record
       --  Flash Ready Interrupt Enable
       FRDY           : Boolean := False;
       --  unspecified
-      Reserved_1_7   : Interfaces.Bit_Types.UInt7 := 16#0#;
+      Reserved_1_7   : Interfaces.SAM.UInt7 := 16#0#;
       --  Flash Wait State
-      FWS            : FMR_FWS_Field := 16#0#;
+      FWS            : EFC_FMR_FWS_Field := 16#0#;
       --  unspecified
-      Reserved_12_15 : Interfaces.Bit_Types.UInt4 := 16#0#;
+      Reserved_12_15 : Interfaces.SAM.UInt4 := 16#0#;
       --  Sequential Code Optimization Disable
       SCOD           : Boolean := False;
       --  unspecified
-      Reserved_17_23 : Interfaces.Bit_Types.UInt7 := 16#0#;
+      Reserved_17_23 : Interfaces.SAM.UInt7 := 16#0#;
       --  Flash Access Mode
       FAM            : Boolean := False;
       --  unspecified
-      Reserved_25_25 : Interfaces.Bit_Types.Bit := 16#0#;
+      Reserved_25_25 : Interfaces.SAM.Bit := 16#0#;
       --  Code Loop Optimization Enable
       CLOE           : Boolean := True;
       --  unspecified
-      Reserved_27_31 : Interfaces.Bit_Types.UInt5 := 16#0#;
+      Reserved_27_31 : Interfaces.SAM.UInt5 := 16#0#;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -63,12 +59,8 @@ package Interfaces.SAM.EFC is
       Reserved_27_31 at 0 range 27 .. 31;
    end record;
 
-   ----------------------
-   -- EFC_FCR_Register --
-   ----------------------
-
    --  Flash Command
-   type FCMD_Field is
+   type FCR_FCMD_Field is
      (
       --  Get Flash descriptor
       Getd,
@@ -111,11 +103,9 @@ package Interfaces.SAM.EFC is
       --  Start read user signature
       Stus,
       --  Stop read user signature
-      Spus,
-      --  Reset value for the field
-      Fcmd_Field_Reset)
+      Spus)
      with Size => 8;
-   for FCMD_Field use
+   for FCR_FCMD_Field use
      (Getd => 0,
       Wp => 1,
       Wpl => 2,
@@ -136,33 +126,32 @@ package Interfaces.SAM.EFC is
       Wus => 18,
       Eus => 19,
       Stus => 20,
-      Spus => 21,
-      Fcmd_Field_Reset => 224);
+      Spus => 21);
 
-   subtype FCR_FARG_Field is Interfaces.Bit_Types.Short;
+   subtype EFC_FCR_FARG_Field is Interfaces.SAM.UInt16;
 
    --  Flash Writing Protection Key
-   type FKEY_Field is
+   type FCR_FKEY_Field is
      (
       --  Reset value for the field
-      Fkey_Field_Reset,
+      Fcr_Fkey_Field_Reset,
       --  The 0x5A value enables the command defined by the bits of the
       --  register. If the field is written with a different value, the write
       --  is not performed and no action is started.
       Passwd)
      with Size => 8;
-   for FKEY_Field use
-     (Fkey_Field_Reset => 5,
+   for FCR_FKEY_Field use
+     (Fcr_Fkey_Field_Reset => 0,
       Passwd => 90);
 
    --  EEFC Flash Command Register
    type EFC_FCR_Register is record
       --  Write-only. Flash Command
-      FCMD : FCMD_Field := Fcmd_Field_Reset;
+      FCMD : FCR_FCMD_Field := Interfaces.SAM.EFC.Getd;
       --  Write-only. Flash Command Argument
-      FARG : FCR_FARG_Field := 16#FFB3#;
+      FARG : EFC_FCR_FARG_Field := 16#0#;
       --  Write-only. Flash Writing Protection Key
-      FKEY : FKEY_Field := Fkey_Field_Reset;
+      FKEY : FCR_FKEY_Field := Fcr_Fkey_Field_Reset;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -173,22 +162,18 @@ package Interfaces.SAM.EFC is
       FKEY at 0 range 24 .. 31;
    end record;
 
-   ----------------------
-   -- EFC_FSR_Register --
-   ----------------------
-
    --  EEFC Flash Status Register
    type EFC_FSR_Register is record
       --  Read-only. Flash Ready Status
-      FRDY          : Boolean := True;
+      FRDY          : Boolean;
       --  Read-only. Flash Command Error Status
-      FCMDE         : Boolean := False;
+      FCMDE         : Boolean;
       --  Read-only. Flash Lock Error Status
-      FLOCKE        : Boolean := False;
+      FLOCKE        : Boolean;
       --  Read-only. Flash Error Status
-      FLERR         : Boolean := False;
+      FLERR         : Boolean;
       --  unspecified
-      Reserved_4_31 : Interfaces.Bit_Types.UInt28;
+      Reserved_4_31 : Interfaces.SAM.UInt28;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -201,21 +186,17 @@ package Interfaces.SAM.EFC is
       Reserved_4_31 at 0 range 4 .. 31;
    end record;
 
-   -----------------------
-   -- EFC_WPMR_Register --
-   -----------------------
-
    --  Write Protection Key
-   type WPKEY_Field is
+   type WPMR_WPKEY_Field is
      (
       --  Reset value for the field
-      Wpkey_Field_Reset,
+      Wpmr_Wpkey_Field_Reset,
       --  Writing any other value in this field aborts the write
       --  operation.Always reads as 0.
       Passwd)
      with Size => 24;
-   for WPKEY_Field use
-     (Wpkey_Field_Reset => 0,
+   for WPMR_WPKEY_Field use
+     (Wpmr_Wpkey_Field_Reset => 0,
       Passwd => 4539971);
 
    --  Write Protection Mode Register
@@ -223,9 +204,9 @@ package Interfaces.SAM.EFC is
       --  Write Protection Enable
       WPEN         : Boolean := False;
       --  unspecified
-      Reserved_1_7 : Interfaces.Bit_Types.UInt7 := 16#0#;
+      Reserved_1_7 : Interfaces.SAM.UInt7 := 16#0#;
       --  Write Protection Key
-      WPKEY        : WPKEY_Field := Wpkey_Field_Reset;
+      WPKEY        : WPMR_WPKEY_Field := Wpmr_Wpkey_Field_Reset;
    end record
      with Volatile_Full_Access, Size => 32,
           Bit_Order => System.Low_Order_First;
@@ -249,18 +230,18 @@ package Interfaces.SAM.EFC is
       --  EEFC Flash Status Register
       FSR  : EFC_FSR_Register;
       --  EEFC Flash Result Register
-      FRR  : Interfaces.Bit_Types.Word;
+      FRR  : Interfaces.SAM.UInt32;
       --  Write Protection Mode Register
       WPMR : EFC_WPMR_Register;
    end record
      with Volatile;
 
    for EFC_Peripheral use record
-      FMR  at 0 range 0 .. 31;
-      FCR  at 4 range 0 .. 31;
-      FSR  at 8 range 0 .. 31;
-      FRR  at 12 range 0 .. 31;
-      WPMR at 228 range 0 .. 31;
+      FMR  at 16#0# range 0 .. 31;
+      FCR  at 16#4# range 0 .. 31;
+      FSR  at 16#8# range 0 .. 31;
+      FRR  at 16#C# range 0 .. 31;
+      WPMR at 16#E4# range 0 .. 31;
    end record;
 
    --  Embedded Flash Controller

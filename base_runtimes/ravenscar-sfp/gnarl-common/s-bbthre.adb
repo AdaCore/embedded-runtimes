@@ -33,7 +33,6 @@ pragma Restrictions (No_Elaboration_Code);
 
 with System.Parameters;
 with System.BB.Parameters;
-with System.BB.Board_Support;
 with System.BB.Protection;
 with System.BB.Threads.Queues;
 
@@ -43,7 +42,7 @@ package body System.BB.Threads is
 
    use System.Multiprocessors;
    use System.BB.CPU_Primitives;
-   use System.BB.CPU_Primitives.Multiprocessors;
+   use System.BB.Board_Support.Multiprocessors;
    use System.BB.Time;
    use System.BB.Parameters;
    use Board_Support;

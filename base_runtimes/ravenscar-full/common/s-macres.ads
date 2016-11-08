@@ -6,7 +6,7 @@
 --                                                                          --
 --                                 S p e c                                  --
 --                                                                          --
---              Copyright (C) 2011, Free Software Foundation, Inc.          --
+--           Copyright (C) 2011-2016, Free Software Foundation, Inc.        --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -29,6 +29,8 @@
 --  In the context of an OS, this terminates the process.
 
 package System.Machine_Reset is
+   pragma No_Elaboration_Code_All;
+
    procedure Stop;
    pragma No_Return (Stop);
    --  Abruptly stop the program

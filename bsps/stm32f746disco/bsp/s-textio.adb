@@ -31,7 +31,7 @@
 
 with Interfaces; use Interfaces;
 
-with Interfaces.Bit_Types;   use Interfaces.Bit_Types;
+with Interfaces.STM32;       use Interfaces.STM32;
 with Interfaces.STM32.RCC;   use Interfaces.STM32.RCC;
 with Interfaces.STM32.GPIO;  use Interfaces.STM32.GPIO;
 with Interfaces.STM32.USART; use Interfaces.STM32.USART;

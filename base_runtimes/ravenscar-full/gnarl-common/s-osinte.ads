@@ -50,13 +50,17 @@ package System.OS_Interface is
    -- Interrupts --
    ----------------
 
-   Max_Interrupt : constant := System.BB.Interrupts.Max_Interrupt;
-   --  Number of asynchronous interrupts
+   subtype Interrupt_Range is System.BB.Interrupts.Interrupt_ID;
+   --  Range of interrupts identifiers, for s-inter
 
    subtype Interrupt_ID is System.BB.Interrupts.Interrupt_ID;
    --  Interrupt identifiers
 
-   No_Interrupt : constant Interrupt_ID := System.BB.Interrupts.No_Interrupt;
+   subtype Any_Interrupt_ID is System.BB.Interrupts.Any_Interrupt_ID;
+   --  Interrupt identifiers plus No_Interrupt
+
+   No_Interrupt : constant Any_Interrupt_ID :=
+                     System.BB.Interrupts.No_Interrupt;
    --  Special value indicating no interrupt
 
    subtype Interrupt_Handler is System.BB.Interrupts.Interrupt_Handler;
@@ -66,7 +70,7 @@ package System.OS_Interface is
    -- Interrupt processing --
    --------------------------
 
-   function Current_Interrupt return Interrupt_ID
+   function Current_Interrupt return Any_Interrupt_ID
      renames System.BB.Interrupts.Current_Interrupt;
    --  Function that returns the hardware interrupt currently being
    --  handled (if any). In case no hardware interrupt is being handled
@@ -79,7 +83,7 @@ package System.OS_Interface is
      renames System.BB.Interrupts.Attach_Handler;
    --  Attach a handler to a hardware interrupt
 
-   procedure Power_Down renames System.BB.Board_Support.Power_Down;
+   procedure Power_Down renames System.BB.Board_Support.Interrupts.Power_Down;
    --  Put current CPU in power-down mode
 
    ----------
@@ -196,7 +200,7 @@ package System.OS_Interface is
    --  System.Any_Priority'First if no threads are running.
 
    function Current_CPU return Multiprocessors.CPU
-     renames System.BB.CPU_Primitives.Multiprocessors.Current_CPU;
+     renames System.BB.Board_Support.Multiprocessors.Current_CPU;
    --  Return the id of the current CPU
 
 end System.OS_Interface;

@@ -44,11 +44,6 @@ typedef char bool;
 # define true 1
 # define false 0
 
-#ifdef __ARM_EABI_UNWINDER__
-/* for memcmp */
-#include "string.h"
-#endif
-
 #include "raise.h"
 
 #ifdef __APPLE__
@@ -71,6 +66,11 @@ typedef char bool;
    a-except, so wrappers are defined here.  */
 
 #include "unwind.h"
+
+#ifdef __ARM_EABI_UNWINDER__
+/* for memcmp */
+#include <string.h>
+#endif
 
 typedef struct _Unwind_Context _Unwind_Context;
 typedef struct _Unwind_Exception _Unwind_Exception;

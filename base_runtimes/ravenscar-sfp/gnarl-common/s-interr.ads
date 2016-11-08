@@ -53,10 +53,10 @@ package System.Interrupts is
    --  Default value used when a pragma Interrupt_Handler or Attach_Handler is
    --  specified without an Interrupt_Priority pragma, see D.3(10).
 
-   type Ada_Interrupt_ID is range 0 .. System.OS_Interface.Max_Interrupt;
+   type Ada_Interrupt_ID is new System.OS_Interface.Interrupt_Range;
    --  Avoid inheritance by Ada.Interrupts.Interrupt_ID of unwanted operations
 
-   type Interrupt_ID is range 0 .. System.OS_Interface.Max_Interrupt;
+   type Interrupt_ID is new System.OS_Interface.Interrupt_Range;
 
    --  The following renaming is introduced so that the type is accessible
    --  through rtsfind, otherwise the name clashes with its homonym in

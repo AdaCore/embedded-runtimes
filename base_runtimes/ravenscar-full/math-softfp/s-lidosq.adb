@@ -2,7 +2,7 @@
 --                                                                          --
 --                         GNAT COMPILER COMPONENTS                         --
 --                                                                          --
---                S Y S T E M . L I B M _ D O U B L E . S Q R T             --
+--                S Y S T E M . L I B M _ S I N G L E . S Q R T             --
 --                                                                          --
 --                                B o d y                                   --
 --                                                                          --
@@ -30,9 +30,9 @@ with Ada.Unchecked_Conversion;
 
 with System.Machine_Code;
 
-package body System.Libm_Double.Squareroot is
+package body System.Libm_Single.Squareroot is
 
-   function Rsqrt (X : Long_Float) return Long_Float;
+   function Rsqrt (X : Float) return Float;
    --  Compute the reciprocal square root. There are two reasons for computing
    --  the reciprocal square root instead of computing directly the square
    --  root: PowerPc provides an instruction (fsqrte) to compute an estimate of
@@ -45,9 +45,9 @@ package body System.Libm_Double.Squareroot is
    -- Rsqrt --
    -----------
 
-   function Rsqrt (X : Long_Float) return Long_Float is
-      X_Half : constant Long_Float := X * 0.5;
-      Y, Y1  : Long_Float;
+   function Rsqrt (X : Float) return Float is
+      X_Half : constant Float := X * 0.5;
+      Y, Y1  : Float;
 
    begin
       if Standard'Target_Name = "powerpc-elf" then
@@ -55,8 +55,8 @@ package body System.Libm_Double.Squareroot is
          --  On powerpc, the precision of fsqrte is at least 5 binary digits
 
          System.Machine_Code.Asm ("frsqrte %0,%1",
-                                  Outputs => Long_Float'Asm_Output ("=f", Y),
-                                  Inputs  => Long_Float'Asm_Input ("f", X));
+                                  Outputs => Float'Asm_Output ("=f", Y),
+                                  Inputs  => Float'Asm_Input ("f", X));
       else
          --  Provide the exact result for 1.0
 
@@ -64,36 +64,24 @@ package body System.Libm_Double.Squareroot is
             return X;
          end if;
 
-         --  Use the method described in Fast Inverse Square Root article by
-         --  Chris Lomont (http://www.lomont.org/Math/Papers/2003/InvSqrt.pdf),
-         --  although the code was known before that article.
-
          declare
-            type Unsigned_Long is mod 2**64;
+            type Unsigned is mod 2**32;
 
-            function To_Unsigned_Long is new Ada.Unchecked_Conversion
-              (Long_Float, Unsigned_Long);
-            function From_Unsigned_Long is new Ada.Unchecked_Conversion
-              (Unsigned_Long, Long_Float);
-            U : Unsigned_Long;
+            function To_Unsigned is new Ada.Unchecked_Conversion
+              (Float, Unsigned);
+            function From_Unsigned is new Ada.Unchecked_Conversion
+              (Unsigned, Float);
+            U : Unsigned;
 
          begin
-            U := To_Unsigned_Long (X);
-            U := 16#5fe6ec85_e7de30da# - (U / 2);
-            Y := From_Unsigned_Long (U);
+            U := To_Unsigned (X);
+            U := 16#5f3759df# - (U / 2);
+            Y := From_Unsigned (U);
 
-            --  Precision is about 4 digits
+            --  Precision is 4 binary digits (but the next iteration is
+            --  much better)
          end;
       end if;
-
-      --  Newton iterations: X <- X - F(X)/F'(X)
-      --  Here F(X) = 1/X^2 - A,  so F'(X) = -2/X^3
-      --  So: X <- X - (1/X^2 - A) / (-2/X^3)
-      --        <- X + .5(X - A*X^3)
-      --        <- X + .5*X*(1 - A*X^2)
-      --        <- X (1 + .5 - .5*A*X^2)
-      --        <- X(1.5 - .5*A*X^2)
-      --  Precision is doubled at each iteration.
 
       --  Refine: 10 digits (PowerPc) or 8 digits (fast method)
 
@@ -103,11 +91,7 @@ package body System.Libm_Double.Squareroot is
 
       Y := Y * (1.5 - X_Half * Y * Y);
 
-      --  Refine: 40 digits (PowerPc) or 32 digits (fast method)
-
-      Y := Y * (1.5 - X_Half * Y * Y);
-
-      --  Refine (beyond the precision of Long_Float)
+      --  Refine (beyond the precision of Float)
 
       Y1 := Y * (1.5 - X_Half * Y * Y);
 
@@ -141,7 +125,7 @@ package body System.Libm_Double.Squareroot is
    -- Sqrt --
    ----------
 
-   function Sqrt (X : Long_Float) return Long_Float is
+   function Sqrt (X : Float) return Float is
    begin
       if X <= 0.0 then
          if X = 0.0 then
@@ -150,7 +134,7 @@ package body System.Libm_Double.Squareroot is
             return NaN;
          end if;
 
-      elsif not Long_Float'Machine_Overflows and then X = Infinity then
+      elsif not Float'Machine_Overflows and then X = Infinity then
          --  Note that if Machine_Overflow is True Infinity won't return.
          --  But in that case, we can assume that X is not infinity.
          return X;
@@ -159,5 +143,4 @@ package body System.Libm_Double.Squareroot is
          return X * Rsqrt (X);
       end if;
    end Sqrt;
-
-end System.Libm_Double.Squareroot;
+end System.Libm_Single.Squareroot;

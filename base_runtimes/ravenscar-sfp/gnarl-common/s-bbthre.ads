@@ -38,8 +38,8 @@ with System.Storage_Elements;
 with System.BB.CPU_Primitives;
 with System.BB.Time;
 with System.BB.Interrupts;
+with System.BB.Board_Support;
 with System.Multiprocessors;
-with System.BB.CPU_Primitives.Multiprocessors;
 
 package System.BB.Threads is
    pragma Preelaborate;
@@ -184,7 +184,7 @@ package System.BB.Threads is
 
        --  This procedure must be called by the master CPU
 
-       CPU_Primitives.Multiprocessors.Current_CPU = Multiprocessors.CPU'First
+       Board_Support.Multiprocessors.Current_CPU = Multiprocessors.CPU'First
 
        --  Initialization can only happen once
 

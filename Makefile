@@ -5,7 +5,7 @@ all:
 	for d in $(sfp); do \
 	  echo $$d; \
 	  cd $$d/..; \
-	  gprbuild -P ravenscar_build.gpr -XRTS=ravenscar-sfp -j0; \
+	  gprbuild -P ravenscar_build.gpr -p -XRTS=ravenscar-sfp -j0; \
 	  echo \* > sfp/obj/.gitignore; \
           echo \* > sfp/adalib/.gitignore; \
 	  git add -f sfp/obj/.gitignore; \
@@ -15,7 +15,7 @@ all:
 	for d in $(full); do \
 	  echo $$d; \
 	  cd $$d/..; \
-	  gprbuild -P ravenscar_build.gpr -XRTS=ravenscar-full -j0; \
+	  gprbuild -P ravenscar_build.gpr -p -XRTS=ravenscar-full -j0; \
 	  echo \* > full/obj/.gitignore; \
           echo \* > full/adalib/.gitignore; \
 	  git add -f full/obj/.gitignore; \

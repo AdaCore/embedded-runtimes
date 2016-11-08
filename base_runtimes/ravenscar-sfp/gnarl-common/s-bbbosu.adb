@@ -34,21 +34,21 @@ with System.Machine_Code;
 with System.BB.Parameters; use System.BB.Parameters;
 
 package body System.BB.Board_Support is
-   use CPU_Primitives, Interrupts, Machine_Code;
+   use CPU_Primitives, BB.Interrupts, Machine_Code, Time;
 
    Sys_Tick_Vector          : constant Vector_Id := 15;
    Interrupt_Request_Vector : constant Vector_Id := 16;
    --  See vector definitions in ARMv7-M version of System.BB.CPU_Primitives.
    --  Defined by ARMv7-M specifications.
 
-   First_IRQ : constant Interrupt_ID := 2;
-   --  This corresponds to the first IRQ number (handled by the NVIC). This
-   --  offset is present so that the Sys_Tick exception can be handled like
-   --  other interrupts, and because interrupt id 0 is reserved.
-
-   Alarm_Time :  Timer_Interval;
+   Alarm_Time : Time.Timer_Interval;
    pragma Volatile (Alarm_Time);
    pragma Export (C, Alarm_Time, "__gnat_alarm_time");
+
+   Alarm_Interrupt_ID : constant Interrupt_ID := -1;
+   --  Return the interrupt level to use for the alarm clock handler. Note
+   --  that we use a "fake" Interrupt_ID for the alarm interrupt, as it is
+   --  handled specially (not through the NVIC).
 
    ---------------------------
    -- System control and ID --
@@ -68,7 +68,7 @@ package body System.BB.Board_Support is
    --  is a trade-off between accurate delays, limited overhead and maximum
    --  time that interrupts may be disabled.
 
-   Tick_Period   : constant Timer_Interval := Clock_Frequency / 1000;
+   Tick_Period : constant Time.Timer_Interval := Clock_Frequency / 1000;
 
    type Sys_Tick_Registers is record
       SYST_CSR   : Word;
@@ -122,7 +122,8 @@ package body System.BB.Board_Support is
    --  While the value 0 is reserved for the kernel and has no Ada priority
    --  that represents it, Interrupt_Priority'Last is closest.
 
-   IP : array (Interrupt_ID) of PRI with Volatile, Address => 16#E000_E400#;
+   IP : array (0 .. Interrupt_ID'Last) of PRI
+       with Volatile, Address => 16#E000_E400#;
 
    --  Local utility functions
 
@@ -130,6 +131,10 @@ package body System.BB.Board_Support is
      (Interrupt : Interrupt_ID;
       Prio      : Interrupt_Priority);
    --  Enable interrupt requests for the given interrupt
+
+   procedure Interrupt_Handler;
+   procedure Timer_Interrupt_Handler;
+   --  Low-level interrupt handlers
 
    ----------------------
    -- Initialize_Board --
@@ -154,147 +159,153 @@ package body System.BB.Board_Support is
       SYST.SYST_CSR := CSR_Clk_Source or CSR_Enable;
 
       Next_Tick_Time := Tick_Period;
-      Set_Alarm (Timer_Interval'Last);
-      Clear_Alarm_Interrupt;
+      Time.Set_Alarm (Timer_Interval'Last);
+      Time.Clear_Alarm_Interrupt;
+
+      Install_Trap_Handler
+        (Timer_Interrupt_Handler'Address, Sys_Tick_Vector);
+      Install_Trap_Handler
+        (Interrupt_Handler'Address, Interrupt_Request_Vector);
+
       Enable_Interrupts (Priority'Last);
    end Initialize_Board;
 
-   ------------------------
-   -- Max_Timer_Interval --
-   ------------------------
+   package body Time is
+      ------------------------
+      -- Max_Timer_Interval --
+      ------------------------
 
-   function Max_Timer_Interval return Timer_Interval is (2**32 - 1);
+      function Max_Timer_Interval return Timer_Interval is (2**32 - 1);
 
-   ----------------
-   -- Read_Clock --
-   ----------------
+      ----------------
+      -- Read_Clock --
+      ----------------
 
-   function Read_Clock return Timer_Interval is
-      PRIMASK : Word;
-      Flag    : Boolean;
-      Count   : Timer_Interval;
-      Res     : Timer_Interval;
+      function Read_Clock return BB.Time.Time is
+         PRIMASK : Word;
+         Flag    : Boolean;
+         Count   : Timer_Interval;
+         Res     : Timer_Interval;
 
+      begin
+         --  As several registers and variables need to be read or modified, do
+         --  it atomically.
+
+         Asm ("mrs %0, PRIMASK",
+              Outputs => Word'Asm_Output ("=&r", PRIMASK),
+              Volatile => True);
+         Asm ("msr PRIMASK, %0",
+              Inputs  => Word'Asm_Input  ("r", 1),
+              Volatile => True);
+
+         --  We must read the counter register before the flag
+
+         Count := Timer_Interval (SYST.SYST_CVR);
+
+         --  If we read the flag first, a reload can occur just after the read
+         --  and the count register would wrap around. We'd end up with a Count
+         --  value close to the Tick_Period value but a flag at zero and
+         --  therefore miss the reload and return a wrong clock value.
+
+         --  This flag is set when the counter has reached zero. Next_Tick_Time
+         --  has to be incremented. This will trigger an interrupt very soon
+         --  (or has just triggered the interrupt), so count is either zero or
+         --  not far from Tick_Period.
+
+         Flag := (SYST.SYST_CSR and CSR_Count_Flag) /= 0;
+
+         if Flag then
+
+            --  Systick counter has just reached zero, pretend it is still zero
+
+            --  This function is called by the interrupt handler that is
+            --  executed when the counter reaches zero. Therefore, we signal
+            --  that the next interrupt will happen within a period. Note that
+            --  reading the Control and Status register (SYST_CSR) clears the
+            --  COUNTFLAG bit, so even if we have sequential calls to this
+            --  function, the increment of Next_Tick_Time will happen only
+            --  once.
+
+            Res := Next_Tick_Time;
+            Next_Tick_Time := Next_Tick_Time + Tick_Period;
+
+         else
+            --  The counter is decremented, so compute the actual time
+
+            Res := Next_Tick_Time - Count;
+         end if;
+
+         --  Restore interrupt mask
+
+         Asm ("msr PRIMASK, %0",
+              Inputs => Word'Asm_Input ("r", PRIMASK),
+              Volatile => True);
+
+         return BB.Time.Time (Res);
+      end Read_Clock;
+
+      ---------------------------
+      -- Clear_Alarm_Interrupt --
+      ---------------------------
+
+      procedure Clear_Alarm_Interrupt is
+      begin
+         ICSR := ICSR_Pend_ST_Clr;
+      end Clear_Alarm_Interrupt;
+
+      ---------------
+      -- Set_Alarm --
+      ---------------
+
+      procedure Set_Alarm (Ticks : Timer_Interval) is
+         Now : constant Timer_Interval := Timer_Interval (Read_Clock);
+
+      begin
+         --  As we will have periodic interrupts for alarms regardless, the
+         --  only thing to do is force an interrupt if the alarm has already
+         --  expired.
+
+         Alarm_Time :=
+           Now + Timer_Interval'Min (Timer_Interval'Last / 2, Ticks);
+
+         if Ticks = 0 then
+            ICSR := ICSR_Pend_ST_Set;
+         end if;
+      end Set_Alarm;
+
+      ---------------------------
+      -- Install_Alarm_Handler --
+      ---------------------------
+
+      procedure Install_Alarm_Handler
+        (Handler : BB.Interrupts.Interrupt_Handler) is
+      begin
+         BB.Interrupts.Attach_Handler
+           (Handler, Alarm_Interrupt_ID, Interrupt_Priority'Last);
+      end Install_Alarm_Handler;
+   end Time;
+
+   package body Multiprocessors is separate;
+
+   -----------------------------
+   -- Timer_Interrupt_Handler --
+   -----------------------------
+
+   procedure Timer_Interrupt_Handler is
    begin
-      --  As several registers and variables need to be read or modified, do
-      --  it atomically.
-
-      Asm ("mrs %0, PRIMASK",
-           Outputs => Word'Asm_Output ("=&r", PRIMASK),
-           Volatile => True);
-      Asm ("msr PRIMASK, %0",
-           Inputs  => Word'Asm_Input  ("r", 1),
-           Volatile => True);
-
-      --  We must read the counter register before the flag
-
-      Count := Timer_Interval (SYST.SYST_CVR);
-
-      --  If we read the flag first, a reload can occur just after the read and
-      --  the count register would wrap around. We'd end up with a Count value
-      --  close to the Tick_Period value but a flag at zero and therefore miss
-      --  the reload and return a wrong clock value.
-
-      --  This flag is set when the counter has reached zero. Next_Tick_Time
-      --  has to be incremented. This will trigger an interrupt very soon (or
-      --  has just triggered the interrupt), so count is either zero or not far
-      --  from Tick_Period.
-
-      Flag := (SYST.SYST_CSR and CSR_Count_Flag) /= 0;
-
-      if Flag then
-
-         --  Systick counter has just reached zero, pretend it is still zero
-
-         --  This function is called by the interrupt handler that is executed
-         --  when the counter reaches zero. Therefore, we signal that the next
-         --  interrupt will happen within a period. Note that reading the
-         --  Control and Status register (SYST_CSR) clears the COUNTFLAG bit,
-         --  so even if we have sequential calls to this function, the
-         --  increment of Next_Tick_Time will happen only once.
-
-         Res := Next_Tick_Time;
-         Next_Tick_Time := Next_Tick_Time + Tick_Period;
-
-      else
-         --  The counter is decremented, so compute the actual time
-
-         Res := Next_Tick_Time - Count;
-      end if;
-
-      --  Restore interrupt mask
-
-      Asm ("msr PRIMASK, %0",
-           Inputs => Word'Asm_Input ("r", PRIMASK),
-           Volatile => True);
-
-      return Res;
-   end Read_Clock;
-
-   ---------------------------
-   -- Clear_Alarm_Interrupt --
-   ---------------------------
-
-   procedure Clear_Alarm_Interrupt is
-   begin
-      ICSR := ICSR_Pend_ST_Clr;
-   end Clear_Alarm_Interrupt;
-
-   --------------------------
-   -- Clear_Poke_Interrupt --
-   --------------------------
-
-   procedure Clear_Poke_Interrupt is
-   begin
-      null;
-   end Clear_Poke_Interrupt;
-
-   ---------------
-   -- Set_Alarm --
-   ---------------
-
-   procedure Set_Alarm (Ticks : Timer_Interval) is
-      Now : constant Timer_Interval := Read_Clock;
-
-   begin
-      --  As we will have periodic interrupts for alarms regardless, the only
-      --  thing to do is force an interrupt if the alarm has already expired.
-
-      Alarm_Time := Now + Timer_Interval'Min (Timer_Interval'Last / 2, Ticks);
-
-      if Ticks = 0 then
-         ICSR := ICSR_Pend_ST_Set;
-      end if;
-   end Set_Alarm;
-
-   ------------------------
-   -- Alarm_Interrupt_ID --
-   ------------------------
-
-   function Alarm_Interrupt_ID return Interrupt_ID is (1);
-   --  Return the interrupt level to use for the alarm clock handler. Note that
-   --  we use a "fake" Interrupt_ID for the alarm interrupt, as it is handled
-   --  specially (not through the NVIC).
+      Interrupt_Wrapper (Alarm_Interrupt_ID);
+   end Timer_Interrupt_Handler;
 
    -----------------------
-   -- Poke_Interrupt_ID --
+   -- Interrupt_Handler --
    -----------------------
 
-   function Poke_Interrupt_ID return Interrupt_ID is (No_Interrupt);
-
-   ---------------------------
-   -- Get_Interrupt_Request --
-   ---------------------------
-
-   function Get_Interrupt_Request
-     (Vector : Vector_Id) return Interrupt_ID
-   is
+   procedure Interrupt_Handler is
+      Id : Interrupt_ID;
       Res : Word;
 
    begin
-      if Vector = Sys_Tick_Vector then
-         return Alarm_Interrupt_ID;
-      end if;
+      --  The exception number is read from the IPSR
 
       Asm ("mrs %0, ipsr",
            Word'Asm_Output ("=r", Res),
@@ -302,12 +313,14 @@ package body System.BB.Board_Support is
 
       Res := Res and 16#FF#;
 
-      --  The exception number is read from the IPSR, convert it to IRQ
-      --  number by substracting 16 (number of cpu exceptions) and then
-      --  convert it to GNAT interrupt_id by adding First_IRQ.
+      --  Convert it to IRQ number by substracting 16 (number of cpu
+      --  exceptions).
 
-      return Interrupt_ID'Base (Res) - 16 + First_IRQ;
-   end Get_Interrupt_Request;
+      Id := Interrupt_ID'Base (Res) - 16;
+
+      Interrupt_Wrapper (Id);
+
+   end Interrupt_Handler;
 
    ------------------------------
    -- Enable_Interrupt_Request --
@@ -324,13 +337,13 @@ package body System.BB.Board_Support is
 
          pragma Assert (Prio = Interrupt_Priority'Last);
 
-         Clear_Alarm_Interrupt;
+         Time.Clear_Alarm_Interrupt;
          SYST.SYST_CSR := SYST.SYST_CSR or CSR_Tick_Int;
 
       else
          declare
-            pragma Assert (Interrupt >= First_IRQ);
-            IRQ    : constant Natural := Interrupt - First_IRQ;
+            pragma Assert (Interrupt >= 0);
+            IRQ    : constant Natural := Interrupt;
             Regofs : constant Natural := IRQ / 32;
             Regbit : constant Word := 2** (IRQ mod 32);
             NVIC_ISER : array (0 .. 15) of Word
@@ -347,66 +360,55 @@ package body System.BB.Board_Support is
       end if;
    end Enable_Interrupt_Request;
 
-   -------------------------------
-   -- Install_Interrupt_Handler --
-   -------------------------------
+   package body Interrupts is
+      -------------------------------
+      -- Install_Interrupt_Handler --
+      -------------------------------
 
-   procedure Install_Interrupt_Handler
-     (Handler   : Address;
-      Interrupt : Interrupts.Interrupt_ID;
-      Prio      : Interrupt_Priority)
-   is
-   begin
-      if Interrupt = Alarm_Interrupt_ID then
-         Install_Trap_Handler (Handler, Sys_Tick_Vector);
+      procedure Install_Interrupt_Handler
+        (Interrupt : Interrupt_ID;
+         Prio      : Interrupt_Priority)
+      is
+      begin
+         if Interrupt /= Alarm_Interrupt_ID then
+            IP (Interrupt) := To_PRI (Prio);
+         end if;
 
-      else
-         IP (Interrupt - First_IRQ) := To_PRI (Prio);
-         Install_Trap_Handler (Handler, Interrupt_Request_Vector);
-      end if;
+         Enable_Interrupt_Request (Interrupt, Prio);
+      end Install_Interrupt_Handler;
 
-      Enable_Interrupt_Request (Interrupt, Prio);
-   end Install_Interrupt_Handler;
+      ---------------------------
+      -- Priority_Of_Interrupt --
+      ---------------------------
 
-   ---------------------------
-   -- Priority_Of_Interrupt --
-   ---------------------------
+      function Priority_Of_Interrupt
+        (Interrupt : Interrupt_ID) return Any_Priority
+      is
+         (if Interrupt = Alarm_Interrupt_ID then Interrupt_Priority'Last
+         else To_Priority (IP (Interrupt)));
 
-   function Priority_Of_Interrupt
-     (Interrupt : Interrupt_ID) return Any_Priority
-   is
-      --  Interrupt 2 .. 83 correspond to IRQ0 .. IRQ81
+      ----------------
+      -- Power_Down --
+      ----------------
 
-      (if Interrupt = Alarm_Interrupt_ID then Interrupt_Priority'Last
-       else To_Priority (IP (Interrupt - First_IRQ)));
+      procedure Power_Down is
+      begin
+         Asm ("wfi", Volatile => True);
+      end Power_Down;
 
-   ----------------
-   -- Power_Down --
-   ----------------
+      --------------------------
+      -- Set_Current_Priority --
+      --------------------------
 
-   procedure Power_Down is
-   begin
-      Asm ("wfi", Volatile => True);
-   end Power_Down;
+      procedure Set_Current_Priority (Priority : Integer) is
+      begin
+         --  Writing a 0 to BASEPRI disables interrupt masking, while values
+         --  15 .. 1 correspond to interrupt priorities 255 .. 241 in that
+         --  order.
 
-   -----------------------------
-   -- Clear_Interrupt_Request --
-   -----------------------------
-
-   procedure Clear_Interrupt_Request (Interrupt : Interrupts.Interrupt_ID)
-      is null;
-
-   --------------------------
-   -- Set_Current_Priority --
-   --------------------------
-
-   procedure Set_Current_Priority (Priority : Integer) is
-   begin
-      --  Writing a 0 to BASEPRI disables interrupt masking, while values
-      --  15 .. 1 correspond to interrupt priorities 255 .. 241 in that order.
-
-      Asm ("msr BASEPRI, %0",
-           Inputs => PRI'Asm_Input ("r", To_PRI (Priority)),
-           Volatile => True);
-   end Set_Current_Priority;
+         Asm ("msr BASEPRI, %0",
+              Inputs => PRI'Asm_Input ("r", To_PRI (Priority)),
+              Volatile => True);
+      end Set_Current_Priority;
+   end Interrupts;
 end System.BB.Board_Support;

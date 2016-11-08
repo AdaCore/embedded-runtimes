@@ -215,7 +215,8 @@ package body System.Task_Primitives.Operations is
       System.Tasking.Debug.Add_Task_Id (Self_ID);
 
       --  Ensure that the task has the right priority priority at the end
-      --  of its initialization (before calling the task's code).
+      --  of its initialization (before calling the task's code). This will
+      --  reschedule if needed.
 
       System.OS_Interface.Set_Priority (Self_ID.Common.Base_Priority);
    end Enter_Task;

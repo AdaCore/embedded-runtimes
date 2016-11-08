@@ -8,7 +8,7 @@
 --                                                                          --
 --        Copyright (C) 1999-2002 Universidad Politecnica de Madrid         --
 --             Copyright (C) 2003-2005 The European Space Agency            --
---                     Copyright (C) 2003-2015, AdaCore                     --
+--                     Copyright (C) 2003-2016, AdaCore                     --
 --                                                                          --
 -- GNARL is free software; you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -37,15 +37,14 @@ with System.BB.Protection;
 with System.BB.Parameters;
 with System.BB.Threads.Queues;
 with System.BB.Timing_Events;
-with System.BB.CPU_Primitives.Multiprocessors;
 with System.Multiprocessors.Fair_Locks;
 with System.Multiprocessors.Spin_Locks;
 
 package body System.BB.Time is
 
-   use Board_Support;
+   use Board_Support.Time;
    use Parameters;
-   use CPU_Primitives.Multiprocessors;
+   use Board_Support.Multiprocessors;
    use System.Multiprocessors;
    use System.Multiprocessors.Fair_Locks;
    use System.Multiprocessors.Spin_Locks;
@@ -60,7 +59,7 @@ package body System.BB.Time is
    --  Used to protect access to shared alarm resources
    --  (Timer configuration and Pending_Alarm variable)
 
-   subtype Clock_Interval is Timer_Interval;
+   subtype Clock_Interval is Board_Support.Time.Timer_Interval;
 
    type Clock_Periods is mod 2 ** 32;
    for Clock_Periods'Size use 32;
@@ -125,18 +124,17 @@ package body System.BB.Time is
    -------------------
 
    procedure Alarm_Handler (Interrupt : Interrupts.Interrupt_ID) is
+      pragma Unreferenced (Interrupt);
+
       Now             : Time;
       Next_Alarm      : Time; -- Time
 
    begin
-      --  Make sure we are handling the right interrupt and there is an alarm
-      --  pending.
+      --  Make sure there is an alarm pending.
 
-      pragma Assert
-        (Pending_Alarm /= Time'Last
-           and then Interrupt = Alarm_Interrupt_ID);
+      pragma Assert (Pending_Alarm /= Time'Last);
 
-      Board_Support.Clear_Alarm_Interrupt;
+      Board_Support.Time.Clear_Alarm_Interrupt;
 
       --  The access to the queues must be protected
 
@@ -181,7 +179,7 @@ package body System.BB.Time is
 
                      --  Alarm expired, wake up the CPU
 
-                     Poke_CPU (CPU_Id);
+                     Board_Support.Multiprocessors.Poke_CPU (CPU_Id);
 
                   else
                      --  Check if this is the next non-expired alarm of the
@@ -265,7 +263,7 @@ package body System.BB.Time is
 
          Before_LSP := Software_Clock.LSP;
 
-         Now_LSP := Read_Clock;
+         Now_LSP := Clock_Interval (Read_Clock);
 
          After_MSP := Software_Clock.MSP;
 
@@ -399,10 +397,7 @@ package body System.BB.Time is
 
       --  Install alarm handler
 
-      Interrupts.Attach_Handler
-        (Alarm_Handler'Access,
-         Alarm_Interrupt_ID,
-         Priority_Of_Interrupt (Alarm_Interrupt_ID));
+      Board_Support.Time.Install_Alarm_Handler (Alarm_Handler'Access);
 
       --  It is important to initialize the software LSP with the value coming
       --  from the hardware. There is no guarantee that this hardware value is
@@ -412,13 +407,13 @@ package body System.BB.Time is
       --  the value in the software LSP is less than a period away from the
       --  actual value in hardware).
 
-      Software_Clock.LSP := Read_Clock;
+      Software_Clock.LSP := Clock_Interval (Read_Clock);
 
       --  Establish invariant that there always is a pending alarm at most
       --  Max_Sleep time in the future.
 
       Pending_Alarm := Clock + Max_Sleep;
-      Board_Support.Set_Alarm (Clock_Interval (Max_Sleep));
+      Board_Support.Time.Set_Alarm (Clock_Interval (Max_Sleep));
    end Initialize_Timers;
 
    -------------------
@@ -457,7 +452,7 @@ package body System.BB.Time is
       if Alarm < Pending_Alarm then
          pragma Assert (Time_Difference in 1 .. Max_Sleep);
 
-         Board_Support.Set_Alarm (Clock_Interval (Time_Difference));
+         Board_Support.Time.Set_Alarm (Clock_Interval (Time_Difference));
          Pending_Alarm := Alarm;
       end if;
 
@@ -476,7 +471,7 @@ package body System.BB.Time is
    procedure Update_Clock (Now : out Time) is
       Update_MSP : constant Clock_Periods := Software_Clock.MSP;
       Update_LSP : constant Clock_Interval := Software_Clock.LSP;
-      Now_LSP    : constant Clock_Interval := Read_Clock;
+      Now_LSP    : constant Clock_Interval := Clock_Interval (Read_Clock);
       Now_MSP    : Clock_Periods;
 
    begin
