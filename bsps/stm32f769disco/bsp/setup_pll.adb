@@ -83,8 +83,8 @@ procedure Setup_Pll is
       PLLVC0      : constant Integer := PLLCLKIN * PLLN_Value;
       PLLCLKOUT   : constant Integer := PLLVC0 / PLLP_Value;
 
-      PLLQ_Value  : constant PLLQ_Range := 7;
-      --  Arbitrary fixed
+      PLLQ_Value  : constant PLLQ_Range := PLLQ_Range (PLLN_Value / 48);
+      --  Used by the CLK48 clock (USB, SDMMC).
 
       PLLM        : constant UInt6 := UInt6 (PLLM_Value);
       PLLN        : constant UInt9 := UInt9 (PLLN_Value);
