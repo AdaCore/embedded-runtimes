@@ -71,6 +71,30 @@ package Ada.Interrupts.Names is
      Kinetis_K64F.External_Interrupt_Type'Pos (Kinetis_K64F.UART5_RX_TX_IRQ) +
      2;
 
+   CAN0_ORed_Message_Buffer_Interrupt : constant Interrupt_ID :=
+     Kinetis_K64F.External_Interrupt_Type'Pos (
+        Kinetis_K64F.CAN0_ORed_Message_Buffer_IRQ) + 2;
+
+   CAN0_Bus_Off_Interrupt : constant Interrupt_ID :=
+     Kinetis_K64F.External_Interrupt_Type'Pos (
+        Kinetis_K64F.CAN0_Bus_Off_IRQ) + 2;
+
+   CAN0_Error_Interrupt : constant Interrupt_ID :=
+     Kinetis_K64F.External_Interrupt_Type'Pos (
+        Kinetis_K64F.CAN0_Error_IRQ) + 2;
+
+   CAN0_Tx_Warning_Interrupt : constant Interrupt_ID :=
+     Kinetis_K64F.External_Interrupt_Type'Pos (
+        Kinetis_K64F.CAN0_Tx_Warning_IRQ) + 2;
+
+   CAN0_Rx_Warning_Interrupt : constant Interrupt_ID :=
+     Kinetis_K64F.External_Interrupt_Type'Pos (
+        Kinetis_K64F.CAN0_Rx_Warning_IRQ) + 2;
+
+   CAN0_Wake_Up_Interrupt : constant Interrupt_ID :=
+     Kinetis_K64F.External_Interrupt_Type'Pos (
+        Kinetis_K64F.CAN0_Wake_Up_IRQ) + 2;
+
    ENET0_Transmit_Interrupt          : constant Interrupt_ID :=
      Kinetis_K64F.External_Interrupt_Type'Pos (
         Kinetis_K64F.ENET_Transmit_IRQ) + 2;

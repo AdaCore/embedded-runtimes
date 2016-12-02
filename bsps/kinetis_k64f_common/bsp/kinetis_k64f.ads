@@ -124,7 +124,7 @@ package Kinetis_K64F is
       DAC1_IRQ,
       ADC1_IRQ,
       I2C2_IRQ,
-      CAN0_ORed_Message_buffer_IRQ,
+      CAN0_ORed_Message_Buffer_IRQ,
       CAN0_Bus_Off_IRQ,
       CAN0_Error_IRQ,
       CAN0_Tx_Warning_IRQ,
