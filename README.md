@@ -23,4 +23,4 @@ in your project file the runtime like below:
 
 To install the runtime, make sure that GNAT is in your PATH, and use
 
-   $ make install
+    $ make install
