@@ -15,7 +15,7 @@ compiler, or new ones.
 To use such runtimes, in your project file, you have two options: via
 an absolute path or by installing the runtimes.
 
-To reverence them directly using their absolute path, you need to specify
+To reference them directly using their absolute path, you need to specify
 in your project file the runtime like below:
 
     for Runtime("Ada") use Project'Project_Dir &
