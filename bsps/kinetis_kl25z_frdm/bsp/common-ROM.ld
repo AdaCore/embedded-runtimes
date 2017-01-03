@@ -88,6 +88,9 @@ SECTIONS
     __data_start = .;
     *(.data .data.* .gnu.linkonce.d*)
 
+    . = ALIGN(0x4);
+    *(.ram_code)        /* For code relocated to SRAM */
+
     /* Ensure that the end of the data section is always word aligned.
        Initial values are stored in 4-bytes blocks so we must guarantee
        that these blocks do not fall out the section (otherwise they are
