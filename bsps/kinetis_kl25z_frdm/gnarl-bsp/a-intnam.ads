@@ -56,6 +56,12 @@ package Ada.Interrupts.Names is
    UART2_Interrupt                   : constant Interrupt_ID :=
      Kinetis_KL25Z.External_Interrupt_Type'Pos (Kinetis_KL25Z.UART2_IRQ) + 2;
 
+   ADC0_Interrupt                   : constant Interrupt_ID :=
+     Kinetis_KL25Z.External_Interrupt_Type'Pos (Kinetis_KL25Z.ADC0_IRQ) + 2;
+
+   PIT_Interrupt                   : constant Interrupt_ID :=
+     Kinetis_KL25Z.External_Interrupt_Type'Pos (Kinetis_KL25Z.PIT_IRQ) + 2;
+
    --  ...
 
 end Ada.Interrupts.Names;
