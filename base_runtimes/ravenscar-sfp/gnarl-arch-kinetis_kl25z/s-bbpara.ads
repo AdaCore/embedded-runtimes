@@ -36,7 +36,7 @@
 
 --  This package defines basic parameters used by the low level tasking system
 
---  This is the Kinetis KL25Z (ARMv7) version of this package
+--  This is the Kinetis KL25Z (ARMv6) version of this package
 
 pragma Restrictions (No_Elaboration_Code);
 
@@ -49,7 +49,7 @@ package System.BB.Parameters is
 
    Ticks_Per_Second : constant := Clock_Frequency;
 
-   Has_FPU : constant Boolean := True;
+   Has_FPU : constant Boolean := False;
 
    ----------------
    -- Interrupts --
