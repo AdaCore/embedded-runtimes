@@ -51,6 +51,10 @@ package System.BB.Parameters is
 
    Has_FPU : constant Boolean := True;
 
+   Use_Watchdog_Timer : constant Boolean := False;
+
+   Use_MPU : constant Boolean := True;
+
    ----------------
    -- Interrupts --
    ----------------

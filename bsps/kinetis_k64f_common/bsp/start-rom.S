@@ -96,6 +96,7 @@ _start_rom:
 1:
         bl	microcontroller_clocks__initialize
         bl      reset_counter__update
+        bl      memory_protection__initialize
 	bl	main
 
 hang:   b .
