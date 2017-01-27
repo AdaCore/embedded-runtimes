@@ -44,6 +44,11 @@ __DYNAMIC  =  0;
 
 _DEFAULT_STACK_SIZE = 1024;
 
+/*
+ * MPU region alignment in bytes
+ */
+MPU_REGION_ALIGNMENT = 32;
+
 ENTRY(_start_rom);
 
 SECTIONS
@@ -65,8 +70,14 @@ SECTIONS
 
   .text :
   {
+    . = ALIGN(MPU_REGION_ALIGNMENT);
+    __flash_text_start = .;
+
     *(.text .text.* .gnu.linkonce.t*)
     *(.gnu.warning)
+
+    . = ALIGN(MPU_REGION_ALIGNMENT);
+    __flash_text_end = .;
   } > flash_text
 
   .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } > flash_text

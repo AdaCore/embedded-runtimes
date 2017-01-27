@@ -104,35 +104,22 @@ package Kinetis_K64F.MPU is
    type Slave_Port_Array_Type is array (0 .. 4) of Slave_Port_Type
       with Size => 320;
 
-   --  Region Descriptor n, Word 0
-   type WORD0_Register_Type is record
-      --  unspecified
-      Reserved_0_4 : Five_Bits := 16#0#;
-      --  Start Address
-      SRTADDR      : Twenty_Seven_Bits := 16#0#;
-   end record
-     with Volatile_Full_Access, Size => 32,
-          Bit_Order => System.Low_Order_First;
+   --  MPU region alignment in bytes
+   MPU_Region_Alignment : constant := 32;
 
-   for WORD0_Register_Type use record
-      Reserved_0_4 at 0 range 0 .. 4;
-      SRTADDR      at 0 range 5 .. 31;
-   end record;
+   --  Region Descriptor n, Word 0
+   subtype Start_Address_Type is Unsigned_32
+      with Dynamic_Predicate =>
+         Start_Address_Type mod MPU_Region_Alignment = 0;
+
+   subtype WORD0_Register_Type is Start_Address_Type;
+
+   subtype End_Address_Type is Unsigned_32
+      with Dynamic_Predicate =>
+         (End_Address_Type + 1) mod MPU_Region_Alignment = 0;
 
    --  Region Descriptor n, Word 1
-   type WORD1_Register_Type is record
-      --  unspecified
-      Reserved_0_4 : Five_Bits := 16#1F#;
-      --  End Address
-      ENDADDR      : Twenty_Seven_Bits := 16#7FFFFFF#;
-   end record
-     with Volatile_Full_Access, Size => 32,
-          Bit_Order => System.Low_Order_First;
-
-   for WORD1_Register_Type use record
-      Reserved_0_4 at 0 range 0 .. 4;
-      ENDADDR      at 0 range 5 .. 31;
-   end record;
+   subtype WORD1_Register_Type is End_Address_Type;
 
    type User_Mode_Permissions_Type is record
       Execute_Allowed : Bit := 16#0#;
@@ -211,7 +198,7 @@ package Kinetis_K64F.MPU is
    --  Region Descriptor n, Word 3
    type WORD3_Register_Type is record
       --  Valid
-      VLD           : Bit := 16#1#;
+      VLD           : Bit := 16#0#;
       --  unspecified
       Reserved_1_15 : Fifteen_Bits := 16#0#;
       --  Process Identifier Mask
@@ -243,9 +230,11 @@ package Kinetis_K64F.MPU is
       WORD3 at 12 range 0 .. 31;
    end record;
 
+   type Region_Index_Type is range 0 .. 11;
+
    --  Region descriptors
    type Region_Descriptors_Array_Type is
-      array (0 .. 11) of Region_Descriptor_Type
+      array (Region_Index_Type) of Region_Descriptor_Type
       with Size => 12 * 4 * Unsigned_32'Size;
 
    --  Region Descriptor Alternate Access Control n
@@ -253,7 +242,7 @@ package Kinetis_K64F.MPU is
 
    --  Region Descriptor Alternate Access Control n
    type Alternate_Region_Descriptor_Array_Type is
-      array (0 .. 11) of RGDAAC_Register_Type
+      array (Region_Index_Type) of RGDAAC_Register_Type
       with Size => 12 * Unsigned_32'Size;
 
    --  Memory protection unit
