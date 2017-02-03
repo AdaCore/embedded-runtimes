@@ -83,6 +83,15 @@ package body Memory_Protection is
    Flash_Text_End : constant Unsigned_32;
    pragma Import (Asm, Flash_Text_End, "__flash_text_end");
 
+   -----------------
+   -- Disable_MPU --
+   -----------------
+
+   procedure Disable_MPU is
+   begin
+      MPU_Registers.CESR := (VLD => 0, others => <>);
+   end Disable_MPU;
+
    ----------------
    -- Initialize --
    ----------------
@@ -134,10 +143,7 @@ package body Memory_Protection is
          WORD3_Value := (VLD => 0, others => <>);
          MPU_Registers.Region_Descriptors (0).WORD3 := WORD3_Value;
       else
-         --
-         --  Disable the MPU:
-         --
-         MPU_Registers.CESR := (VLD => 0, others => <>);
+         Disable_MPU;
       end if;
 
       --

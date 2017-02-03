@@ -30,6 +30,11 @@
 --
 package Memory_Protection is
 
+   procedure Disable_MPU;
+   --
+   --  Disable the MPU hardware
+   --
+
    procedure Initialize;
    --
    --  Initializes memory protection unit
