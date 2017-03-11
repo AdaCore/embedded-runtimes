@@ -53,16 +53,6 @@ package body Memory_Protection is
    --  the CPU, with the given access permissions
    --
 
-   --
-   --  Number of global MPU regions
-   --
-   Num_Global_MPU_Regions : constant := 4;
-
-   --
-   --  Number of task-private MPU data regions
-   --
-   Num_Task_MPU_Regions : constant := 4;
-
    Num_Mpu_Regions_Table : constant array (0 .. 2) of Natural :=
       (0 => 8,
        1 => 12,
@@ -83,6 +73,36 @@ package body Memory_Protection is
    Flash_Text_End : constant Unsigned_32;
    pragma Import (Asm, Flash_Text_End, "__flash_text_end");
 
+   --  Start address of the main stack (stack for ISRs)
+   Main_Stack_Start : constant Unsigned_32;
+   pragma Import (Asm, Main_Stack_Start, "__stack_start");
+
+   --  Start address of the main stack (end for ISRs)
+   Main_Stack_End : constant Unsigned_32;
+   pragma Import (Asm, Main_Stack_End, "__stack_end");
+
+   --
+   --  Common peromissions combinations:
+   --
+
+   Read_Execute_Permissions : constant Bus_Master_Permissions_Type1 :=
+         (User_Mode_Permissions => (Execute_Allowed => 1,
+                                    Write_Allowed => 0,
+                                    Read_Allowed => 1),
+          others => <>);
+
+   Read_Write_Permissions : constant Bus_Master_Permissions_Type1 :=
+         (User_Mode_Permissions => (Execute_Allowed => 0,
+                                    Write_Allowed => 1,
+                                    Read_Allowed => 1),
+          others => <>);
+
+   Read_Only_Permissions : constant Bus_Master_Permissions_Type1 :=
+         (User_Mode_Permissions => (Execute_Allowed => 0,
+                                    Write_Allowed => 0,
+                                    Read_Allowed => 1),
+          others => <>);
+
    -----------------
    -- Disable_MPU --
    -----------------
@@ -99,12 +119,6 @@ package body Memory_Protection is
    procedure Initialize is
       CESR_Value : CESR_Register_Type;
       WORD3_Value : WORD3_Register_Type;
-      Read_Execute_Permissions : constant Bus_Master_Permissions_Type1 :=
-         (User_Mode_Permissions => (Execute_Allowed => 1,
-                                    Write_Allowed => 0,
-                                    Read_Allowed => 1),
-          others => <>);
-
    begin
       pragma Assert (not Memory_Protection_Var.Initialized);
 
@@ -137,7 +151,31 @@ package body Memory_Protection is
             Read_Execute_Permissions);
 
          --
-         --  Disable access to region 0 (background region) for all bus
+         --  Set region for the stack to be used for ISRs and exception
+         --  handlers, including the reset handler (from which this subprogram
+         --  is being invoked)
+         --
+         Set_Mpu_Region_For_Cpu (
+            2,
+            Main_Stack_Start'Address,
+            To_Address (To_Integer (Main_Stack_End'Address) - 1),
+            Read_Write_Permissions);
+
+         --
+         --  Set remaining regions as invalid to save power
+         --
+         for I in First_Task_MPU_Region_Index .. Region_Index_Type'Last loop
+            WORD3_Value := (VLD => 0, others => <>);
+            MPU_Registers.Region_Descriptors (I).WORD3 := WORD3_Value;
+         end loop;
+
+         --
+         --  Enable MPU:
+         --
+         MPU_Registers.CESR := (VLD => 1, others => <>);
+
+         --
+         --  Forbid access to region 0 (background region) for all bus
          --  masters:
          --
          WORD3_Value := (VLD => 0, others => <>);
@@ -189,5 +227,49 @@ package body Memory_Protection is
       MPU_Registers.Region_Descriptors (Region_Index).WORD3 :=
          (VLD => 1, others => <>);
    end Set_Mpu_Region_For_Cpu;
+
+   --------------------------
+   -- Set_Task_Data_Region --
+   --------------------------
+
+   procedure Set_Task_Data_Region (
+      Task_Data_Region_Index : Task_Data_Region_Index_Type;
+      Task_Data_Region : Task_Data_Region_Type)
+   is
+      MPU_Permissions : Bus_Master_Permissions_Type1;
+      Region_Index : constant Region_Index_Type :=
+         Task_Data_Region_Index'Enum_Rep;
+   begin
+      case Task_Data_Region.Permissions is
+         when Read_Only =>
+            MPU_Permissions := Read_Only_Permissions;
+         when Read_Write =>
+            MPU_Permissions := Read_Write_Permissions;
+      end case;
+
+      Set_Mpu_Region_For_Cpu (
+            Region_Index,
+            Task_Data_Region.First_Address,
+            Task_Data_Region.Last_Address,
+            MPU_Permissions);
+
+   end Set_Task_Data_Region;
+
+   ----------------------------
+   -- Unset_Task_Data_Region --
+   ----------------------------
+
+   procedure Unset_Task_Data_Region (
+      Task_Data_Region_Index : Task_Data_Region_Index_Type)
+   is
+      Region_Index : constant Region_Index_Type :=
+         Task_Data_Region_Index'Enum_Rep;
+   begin
+      --
+      --  Disable access to the region:
+      --
+      MPU_Registers.Region_Descriptors (Region_Index).WORD3 :=
+         (VLD => 0, others => <>);
+   end Unset_Task_Data_Region;
 
 end Memory_Protection;

@@ -42,6 +42,16 @@ package body Cpu_Exception_Handlers is
 
    function Get_PSP_Register return Unsigned_32 with Inline;
 
+   -----------------------
+   -- Bus_Fault_Handler --
+   -----------------------
+
+   procedure Bus_Fault_Handler is
+      Return_Address : constant Unsigned_32 := Get_LR_Register;
+   begin
+      Common_Cpu_Exception_Handler ("*** Bus Fault ***", Return_Address);
+   end Bus_Fault_Handler;
+
    ----------------------------------
    -- Common_Cpu_Exception_Handler --
    ----------------------------------
@@ -50,7 +60,7 @@ package body Cpu_Exception_Handlers is
                                            Return_Address : Unsigned_32) is
    begin
       System.BB.CPU_Primitives.Disable_Interrupts;
-      System.Text_IO.Extended.Put_String (Msg & ASCII.LF);
+      System.Text_IO.Extended.Put_String (ASCII.LF & Msg & ASCII.LF);
 
       if Return_Address = 16#FFFFFFFD# or else
          Return_Address = 16#FFFFFFED#
@@ -118,5 +128,26 @@ package body Cpu_Exception_Handlers is
    begin
       Common_Cpu_Exception_Handler ("*** Hard Fault ***", Return_Address);
    end Hard_Fault_Handler;
+
+   -------------------------------
+   -- Mem_Manage_Fault_Handler --
+   ------------------------------
+
+   procedure Mem_Manage_Fault_Handler is
+      Return_Address : constant Unsigned_32 := Get_LR_Register;
+   begin
+      Common_Cpu_Exception_Handler ("*** Memory Management Fault ***",
+                                    Return_Address);
+   end Mem_Manage_Fault_Handler;
+
+   --------------------------
+   -- Usage_Fault_Handler --
+   -------------------------
+
+   procedure Usage_Fault_Handler is
+      Return_Address : constant Unsigned_32 := Get_LR_Register;
+   begin
+      Common_Cpu_Exception_Handler ("*** Usage Fault ***", Return_Address);
+   end Usage_Fault_Handler;
 
 end Cpu_Exception_Handlers;
