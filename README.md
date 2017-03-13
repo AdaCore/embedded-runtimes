@@ -1,7 +1,7 @@
 # embedded-runtimes
 
 This repository contains runtimes that add support for various boards to the
-GNAT GPL compiler for ARM.
+GNAT GPL 2017 compiler for ARM and Aarch64.
 
 ## Content
 
