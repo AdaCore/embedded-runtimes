@@ -1,0 +1,28 @@
+aggregate project Zfp_Openmv2 is
+
+   Base_Installation_Dir := "arm-eabi/lib/gnat";
+   Board                 := "openmv2";
+   Default_Prefix        := 
+     Base_Installation_Dir & "/zfp-" & Board;
+   Install_Dir           := external ("PREFIX", Default_Prefix);
+
+   for external("Add_C_Support") use "no";
+   for external("Add_Memory_Operations") use "yes";
+   for external("RTS_Profile") use "zfp";
+   for external("Add_Math_Lib") use "no";
+   for external("CPU_Family") use "arm";
+   for external("Has_FPU") use "true";
+
+   for external ("INSTALL_PREFIX") use Install_Dir;
+
+   for Target use "arm-eabi";
+   for Runtime ("Ada") use Project'Project_Dir &
+       "cortex-m/stm32/openmv2/zfp";
+
+   for Project_Path use
+     ("cortex-m/stm32/openmv2/zfp");
+   for Project_Files use
+     ("cortex-m/stm32/openmv2/internal/libgnat.gpr",
+      "cortex-m/stm32/openmv2/zfp/install.gpr");
+
+end Zfp_Openmv2;

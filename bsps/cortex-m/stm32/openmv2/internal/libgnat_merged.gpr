@@ -1,0 +1,41 @@
+with "libgnat_sources";
+with "libgnarl_sources";
+with "target_options";
+with "install";
+
+library project Libgnat_Merged is
+
+   Profile := External ("RTS_Profile");
+
+   for Languages use
+     Libgnat_Sources.Gnat_Langs &
+     Libgnarl_Sources.Gnarl_Langs &
+     ("Ada", "Asm_Cpp", "Asm_Cpp");
+
+   for Library_Auto_Init use "False";
+   for Library_Name use "gnat";
+   for Library_Kind use "static";
+
+   for Library_Dir use "../" & Profile & "/adalib";
+   for Object_Dir use "../" & Profile & "/obj";
+
+   for Source_Dirs use
+     Libgnat_Sources.Gnat_Dirs &
+     Libgnarl_Sources.Gnarl_Dirs &
+     ("../" & Profile & "/arch",
+      "../../../src/arch",
+      "../../src/crt0",
+      "../src/crt0") &
+     ("../../../src/gnarl",
+      "../src/gnarl");
+
+   package Compiler renames Target_Options.Compiler;
+
+   package Install is
+      for Prefix use Install.Install_Prefix;
+      for Sources_Subdir use "gnat";
+      for Lib_Subdir use "adalib";
+      for Install_Project use "false";
+   end Install;
+
+end Libgnat_Merged;

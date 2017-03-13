@@ -1,0 +1,31 @@
+aggregate project Ravenscar_Sfp_Rpi2 is
+
+   Base_Installation_Dir := "arm-eabi/lib/gnat";
+   Board                 := "rpi2";
+   Default_Prefix        := 
+     Base_Installation_Dir & "/ravenscar-sfp-" & Board;
+   Install_Dir           := external ("PREFIX", Default_Prefix);
+
+   for external("Add_C_Support") use "no";
+   for external("Memory_Profile") use "large";
+   for external("Add_Memory_Operations") use "yes";
+   for external("RTS_Profile") use "ravenscar-sfp";
+   for external("Timer") use "timer64";
+   for external("Add_Math_Lib") use "no";
+   for external("CPU_Family") use "arm";
+   for external("Has_FPU") use "true";
+
+   for external ("INSTALL_PREFIX") use Install_Dir;
+
+   for Target use "arm-eabi";
+   for Runtime ("Ada") use Project'Project_Dir &
+       "cortex-ar/rpi2/ravenscar-sfp";
+
+   for Project_Path use
+     ("cortex-ar/rpi2/ravenscar-sfp");
+   for Project_Files use
+     ("cortex-ar/rpi2/internal/libgnat.gpr",
+      "cortex-ar/rpi2/internal/libgnarl.gpr",
+      "cortex-ar/rpi2/ravenscar-sfp/install.gpr");
+
+end Ravenscar_Sfp_Rpi2;

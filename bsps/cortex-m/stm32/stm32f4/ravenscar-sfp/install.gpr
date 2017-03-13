@@ -1,0 +1,31 @@
+project Install is
+
+   for Languages use ("XML");
+
+   package Compiler is
+      for Driver ("XML") use "";
+   end Compiler;
+
+   package Naming is
+      for Spec_Suffix ("XML") use ".xml";
+   end Naming;
+
+   for Source_Files use ("runtime.xml");
+
+   Install_Prefix := external ("INSTALL_PREFIX");
+
+   package Install is
+      for Prefix use Install_Prefix;
+      for Required_Artifacts ("") use
+        ("runtime.xml",
+         "../../../../support/ada_source_path",
+         "../../../../support/ada_object_path");
+      for Required_Artifacts("ld") use
+        ("../link/memory-map.ld",
+         "../../link/common-ROM.ld",
+         "../../link/common-RAM.ld");
+      for Sources_Subdir use ".";
+      for Install_Project use "false";
+   end Install;
+
+end Install;

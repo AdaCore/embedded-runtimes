@@ -1,0 +1,34 @@
+with "libgnarl_sources";
+with "libgnat";
+with "target_options";
+with "install";
+
+project Libgnarl is
+
+   Profile := External ("RTS_Profile");
+
+   for Library_Auto_Init use "False";
+   for Library_Name use "gnarl";
+   for Library_Kind use "static";
+
+   for Library_Dir use "../" & Profile & "/adalib";
+   for Object_Dir use "../" & Profile & "/obj";
+
+   for Languages use
+     Libgnarl_Sources.Gnarl_Langs &
+     ("Ada", "Asm_Cpp");
+   for Source_Dirs use
+     Libgnarl_Sources.Gnarl_Dirs &
+     ("../../../src/gnarl",
+      "../src/gnarl");
+
+   package Compiler renames Target_Options.Compiler;
+
+   package Install is
+      for Prefix use Install.Install_Prefix;
+      for Sources_Subdir use "gnarl";
+      for Lib_Subdir use "adalib";
+      for Install_Project use "false";
+   end Install;
+
+end Libgnarl;
