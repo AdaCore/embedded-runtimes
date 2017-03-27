@@ -35,6 +35,9 @@ package Kinetis_K64F.MPU is
    pragma Preelaborate;
    pragma SPARK_Mode (Off);
 
+   --  MPU region alignment in bytes
+   MPU_Region_Alignment : constant := 32;
+
    --  Control/Error Status Register
    type CESR_Register_Type is record
       --  Valid
@@ -104,9 +107,6 @@ package Kinetis_K64F.MPU is
    type Slave_Port_Array_Type is array (0 .. 4) of Slave_Port_Type
       with Size => 320;
 
-   --  MPU region alignment in bytes
-   MPU_Region_Alignment : constant := 32;
-
    --  Region Descriptor n, Word 0
    subtype Start_Address_Type is Unsigned_32
       with Dynamic_Predicate =>
@@ -122,9 +122,9 @@ package Kinetis_K64F.MPU is
    subtype WORD1_Register_Type is End_Address_Type;
 
    type User_Mode_Permissions_Type is record
-      Execute_Allowed : Bit := 16#0#;
-      Write_Allowed : Bit := 16#0#;
-      Read_Allowed : Bit := 16#0#;
+      Execute_Allowed : Bit := 2#0#;
+      Write_Allowed : Bit := 2#0#;
+      Read_Allowed : Bit := 2#0#;
    end record with Size => 3;
 
    for User_Mode_Permissions_Type use record
@@ -141,10 +141,10 @@ package Kinetis_K64F.MPU is
      with Size => 2;
 
    for Supervisor_Mode_Permissions_Type use
-     (Read_Write_Execute_Allowed => 0,
-      Only_Read_Execute_Allowed => 1,
-      Only_Read_Write_Allowed => 2,
-      Use_User_Mode_Permissions => 3);
+     (Read_Write_Execute_Allowed => 2#00#,
+      Only_Read_Execute_Allowed => 2#01#,
+      Only_Read_Write_Allowed => 2#10#,
+      Use_User_Mode_Permissions => 2#11#);
 
    type Bus_Master_Permissions_Type1 is record
       User_Mode_Permissions : User_Mode_Permissions_Type;
@@ -160,8 +160,8 @@ package Kinetis_K64F.MPU is
    end record;
 
    type Bus_Master_Permissions_Type2 is record
-      Write_Allowed : Bit := 16#0#;
-      Read_Allowed : Bit := 16#0#;
+      Write_Allowed : Bit := 2#0#;
+      Read_Allowed : Bit := 2#0#;
    end record with Size => 2;
 
    for Bus_Master_Permissions_Type2 use record
@@ -170,26 +170,26 @@ package Kinetis_K64F.MPU is
    end record;
 
    type Bus_Masters_Permissions_Type is record
-      Master0 : Bus_Master_Permissions_Type1;
-      Master1 : Bus_Master_Permissions_Type1;
-      Master2 : Bus_Master_Permissions_Type1;
-      Master3 : Bus_Master_Permissions_Type1;
-      Master4 : Bus_Master_Permissions_Type2;
-      Master5 : Bus_Master_Permissions_Type2;
-      Master6 : Bus_Master_Permissions_Type2;
-      Master7 : Bus_Master_Permissions_Type2;
-   end record with Size => Unsigned_32'Size,
+      Bus_Master_CPU_Core_Perms : Bus_Master_Permissions_Type1;
+      Bus_Master_Debugger_Perms : Bus_Master_Permissions_Type1;
+      Bus_Master_DMA_EZport_Perms : Bus_Master_Permissions_Type1;
+      Bus_Master_ENET_Perms : Bus_Master_Permissions_Type1;
+      Bus_Master_USB_Perms : Bus_Master_Permissions_Type2;
+      Bus_Master_SDHC_Perms : Bus_Master_Permissions_Type2;
+      Bus_Master6_Perms : Bus_Master_Permissions_Type2;
+      Bus_Master7_Perms : Bus_Master_Permissions_Type2;
+   end record with Volatile_Full_Access, Size => Unsigned_32'Size,
                    Bit_Order => System.Low_Order_First;
 
    for Bus_Masters_Permissions_Type use record
-      Master0 at 0 range 0 .. 5;
-      Master1 at 0 range 6 .. 11;
-      Master2 at 0 range 12 .. 17;
-      Master3 at 0 range 18 .. 23;
-      Master4 at 0 range 24 .. 25;
-      Master5 at 0 range 26 .. 27;
-      Master6 at 0 range 28 .. 29;
-      Master7 at 0 range 30 .. 31;
+      Bus_Master_CPU_Core_Perms at 0 range 0 .. 5;
+      Bus_Master_Debugger_Perms at 0 range 6 .. 11;
+      Bus_Master_DMA_EZport_Perms at 0 range 12 .. 17;
+      Bus_Master_ENET_Perms at 0 range 18 .. 23;
+      Bus_Master_USB_Perms at 0 range 24 .. 25;
+      Bus_Master_SDHC_Perms at 0 range 26 .. 27;
+      Bus_Master6_Perms at 0 range 28 .. 29;
+      Bus_Master7_Perms at 0 range 30 .. 31;
    end record;
 
    --  Region Descriptor n, Word 2
@@ -198,7 +198,7 @@ package Kinetis_K64F.MPU is
    --  Region Descriptor n, Word 3
    type WORD3_Register_Type is record
       --  Valid
-      VLD           : Bit := 16#0#;
+      VLD           : Bit := 2#0#;
       --  unspecified
       Reserved_1_15 : Fifteen_Bits := 16#0#;
       --  Process Identifier Mask

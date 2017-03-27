@@ -25,32 +25,32 @@
 --  POSSIBILITY OF SUCH DAMAGE.
 --
 
-with Kinetis_K64F.MPU;
 with System.BB.Parameters;
-with Interfaces;
-with System.Storage_Elements;
+with Interfaces.Bit_Types;
 
 package body Memory_Protection is
-   use Kinetis_K64F.MPU;
+   use Interfaces.Bit_Types;
    use Interfaces;
-   use System.Storage_Elements;
 
-   procedure Set_Mpu_Region_For_Cpu (
-      Region_Index : Region_Index_Type;
+   pragma Compile_Time_Error (
+      MPU_Region_Index_Type'Enum_Rep (MPU_Region_Index_Type'First) <
+      Kinetis_K64F.MPU.Region_Index_Type'First
+      or
+      MPU_Region_Index_Type'Enum_Rep (MPU_Region_Index_Type'Last) >
+      Kinetis_K64F.MPU.Region_Index_Type'Last,
+      "MPU_Region_Index_Type contains invalid region numbers");
+
+   procedure Define_Mpu_Region (
+      MPU_Region_Index : MPU_Region_Index_Type;
+      Bus_Master : Bus_Master_Type;
       First_Address : System.Address;
       Last_Address : System.Address;
-      Permissions : Bus_Master_Permissions_Type1)
-      with Pre => Region_Index /= 0
-                  and
-                  To_Integer (First_Address) < To_Integer (Last_Address)
-                  and
-                  To_Integer (First_Address) mod MPU_Region_Alignment = 0
-                  and
-                  (To_Integer (Last_Address) + 1) mod MPU_Region_Alignment = 0;
+      Type1_Permissions : Bus_Master_Permissions_Type1;
+      Type2_Permissions : Bus_Master_Permissions_Type2)
+      with Pre => MPU_Region_Index >= Global_Unprivileged_Code_Region;
    --
-   --  Configure an MPU region (region index must be non 0, as region 0 is
-   --  special) to cover a given range of addresses, to be accessible from
-   --  the CPU, with the given access permissions
+   --  Configure an MPU region to cover a given range of addresses and with
+   --  the given access permissions, for the givenbus master.
    --
 
    Num_Mpu_Regions_Table : constant array (0 .. 2) of Natural :=
@@ -74,34 +74,59 @@ package body Memory_Protection is
    pragma Import (Asm, Flash_Text_End, "__flash_text_end");
 
    --  Start address of the main stack (stack for ISRs)
-   Main_Stack_Start : constant Unsigned_32;
-   pragma Import (Asm, Main_Stack_Start, "__stack_start");
+   --  Main_Stack_Start : constant Unsigned_32;
+   --  pragma Import (Asm, Main_Stack_Start, "__stack_start");
 
    --  Start address of the main stack (end for ISRs)
-   Main_Stack_End : constant Unsigned_32;
-   pragma Import (Asm, Main_Stack_End, "__stack_end");
+   --  Main_Stack_End : constant Unsigned_32;
+   --  pragma Import (Asm, Main_Stack_End, "__stack_end");
 
    --
    --  Common peromissions combinations:
    --
 
-   Read_Execute_Permissions : constant Bus_Master_Permissions_Type1 :=
+   Type1_Read_Execute_Permissions : constant Bus_Master_Permissions_Type1 :=
          (User_Mode_Permissions => (Execute_Allowed => 1,
                                     Write_Allowed => 0,
                                     Read_Allowed => 1),
           others => <>);
 
-   Read_Write_Permissions : constant Bus_Master_Permissions_Type1 :=
+   Type1_Read_Write_Permissions : constant Bus_Master_Permissions_Type1 :=
          (User_Mode_Permissions => (Execute_Allowed => 0,
                                     Write_Allowed => 1,
                                     Read_Allowed => 1),
           others => <>);
 
-   Read_Only_Permissions : constant Bus_Master_Permissions_Type1 :=
+   Type1_Read_Only_Permissions : constant Bus_Master_Permissions_Type1 :=
          (User_Mode_Permissions => (Execute_Allowed => 0,
                                     Write_Allowed => 0,
                                     Read_Allowed => 1),
           others => <>);
+
+   Type2_Read_Write_Permissions : constant Bus_Master_Permissions_Type2 :=
+         (Write_Allowed => 1, Read_Allowed => 1);
+
+   Type2_Read_Only_Permissions : constant Bus_Master_Permissions_Type2 :=
+         (Write_Allowed => 0, Read_Allowed => 1);
+
+   ----------------------------
+   -- Define_DMA_Data_Region --
+   ----------------------------
+
+   procedure Define_DMA_Data_Region (Data_Region_Index : MPU_Region_Index_Type;
+                                     DMA_Master : Bus_Master_Type;
+                                     Start_Address : System.Address;
+                                     Size_In_Bytes : Integer_Address;
+                                     Is_Read_Only : Boolean := False)
+   is
+      Data_Region : constant Data_Region_Type :=
+         (First_Address => Start_Address,
+          Last_Address =>
+             To_Address (To_Integer (Start_Address) + Size_In_Bytes - 1),
+          Permissions => (if Is_Read_Only then Read_Only else Read_Write));
+   begin
+      Define_MPU_Data_Region (Data_Region_Index, DMA_Master, Data_Region);
+   end Define_DMA_Data_Region;
 
    -----------------
    -- Disable_MPU --
@@ -112,96 +137,20 @@ package body Memory_Protection is
       MPU_Registers.CESR := (VLD => 0, others => <>);
    end Disable_MPU;
 
-   ----------------
-   -- Initialize --
-   ----------------
+   -----------------------
+   -- Define_Mpu_Region --
+   -----------------------
 
-   procedure Initialize is
-      CESR_Value : CESR_Register_Type;
-      WORD3_Value : WORD3_Register_Type;
-   begin
-      pragma Assert (not Memory_Protection_Var.Initialized);
-
-      if System.BB.Parameters.Use_MPU then
-         --
-         --  Verify that the MPU has enough regions:
-         --
-         CESR_Value := MPU_Registers.CESR;
-         pragma Assert (Natural (CESR_Value.NRGD) <=
-                        Num_Mpu_Regions_Table'Last);
-
-         Memory_Protection_Var.Num_Regions :=
-            Num_Mpu_Regions_Table (Natural (CESR_Value.NRGD));
-
-         pragma Assert (Memory_Protection_Var.Num_Regions >=
-                        Num_Global_MPU_Regions + Num_Task_MPU_Regions);
-
-         --
-         --  Disable MPU to configure it:
-         --
-         MPU_Registers.CESR := (VLD => 0, others => <>);
-
-         --
-         --  Set region 1 to be the code in flash:
-         --
-         Set_Mpu_Region_For_Cpu (
-            1,
-            Flash_Text_Start'Address,
-            To_Address (To_Integer (Flash_Text_End'Address) - 1),
-            Read_Execute_Permissions);
-
-         --
-         --  Set region for the stack to be used for ISRs and exception
-         --  handlers, including the reset handler (from which this subprogram
-         --  is being invoked)
-         --
-         Set_Mpu_Region_For_Cpu (
-            2,
-            Main_Stack_Start'Address,
-            To_Address (To_Integer (Main_Stack_End'Address) - 1),
-            Read_Write_Permissions);
-
-         --
-         --  Set remaining regions as invalid to save power
-         --
-         for I in First_Task_MPU_Region_Index .. Region_Index_Type'Last loop
-            WORD3_Value := (VLD => 0, others => <>);
-            MPU_Registers.Region_Descriptors (I).WORD3 := WORD3_Value;
-         end loop;
-
-         --
-         --  Enable MPU:
-         --
-         MPU_Registers.CESR := (VLD => 1, others => <>);
-
-         --
-         --  Forbid access to region 0 (background region) for all bus
-         --  masters:
-         --
-         WORD3_Value := (VLD => 0, others => <>);
-         MPU_Registers.Region_Descriptors (0).WORD3 := WORD3_Value;
-      else
-         Disable_MPU;
-      end if;
-
-      --
-      --  NOTE: access to background region will be disabled upon the first
-      --  task context switch
-      --
-      Memory_Protection_Var.Initialized := True;
-   end Initialize;
-
-   ----------------------------
-   -- Set_Mpu_Region_For_Cpu --
-   ----------------------------
-
-   procedure Set_Mpu_Region_For_Cpu (
-      Region_Index : Region_Index_Type;
+   procedure Define_Mpu_Region (
+      MPU_Region_Index : MPU_Region_Index_Type;
+      Bus_Master : Bus_Master_Type;
       First_Address : System.Address;
       Last_Address : System.Address;
-      Permissions : Bus_Master_Permissions_Type1)
+      Type1_Permissions : Bus_Master_Permissions_Type1;
+      Type2_Permissions : Bus_Master_Permissions_Type2)
    is
       WORD2_Value : WORD2_Register_Type;
+      Region_Index : constant Region_Index_Type := MPU_Region_Index'Enum_Rep;
    begin
       --
       --  Configure region:
@@ -218,7 +167,26 @@ package body Memory_Protection is
           Unsigned_32 (To_Integer (Last_Address));
 
       WORD2_Value := MPU_Registers.Region_Descriptors (Region_Index).WORD2;
-      WORD2_Value.Master0 := Permissions;
+
+      case Bus_Master is
+         when Cpu_Core0 =>
+            WORD2_Value.Bus_Master_CPU_Core_Perms := Type1_Permissions;
+         when Dma_Device_DMA_Engine =>
+            WORD2_Value.Bus_Master_DMA_EZport_Perms := Type1_Permissions;
+         when Dma_Device_ENET =>
+            WORD2_Value.Bus_Master_ENET_Perms := Type1_Permissions;
+         when Dma_Device_USB =>
+            WORD2_Value.Bus_Master_USB_Perms := Type2_Permissions;
+         when Dma_Device_SDHC =>
+            WORD2_Value.Bus_Master_SDHC_Perms := Type2_Permissions;
+         when Dma_Device_Master6 =>
+            WORD2_Value.Bus_Master6_Perms := Type2_Permissions;
+         when Dma_Device_Master7 =>
+            WORD2_Value.Bus_Master7_Perms := Type2_Permissions;
+         when others =>
+            pragma Assert (False);
+      end case;
+
       MPU_Registers.Region_Descriptors (Region_Index).WORD2 := WORD2_Value;
 
       --
@@ -226,50 +194,163 @@ package body Memory_Protection is
       --
       MPU_Registers.Region_Descriptors (Region_Index).WORD3 :=
          (VLD => 1, others => <>);
-   end Set_Mpu_Region_For_Cpu;
+   end Define_Mpu_Region;
 
-   --------------------------
-   -- Set_Task_Data_Region --
-   --------------------------
+   ----------------------------
+   -- Define_MPU_Data_Region --
+   ----------------------------
 
-   procedure Set_Task_Data_Region (
-      Task_Data_Region_Index : Task_Data_Region_Index_Type;
-      Task_Data_Region : Task_Data_Region_Type)
+   procedure Define_MPU_Data_Region (
+      Data_Region_Index : MPU_Region_Index_Type;
+      Bus_Master : Bus_Master_Type;
+      Data_Region : Data_Region_Type)
    is
-      MPU_Permissions : Bus_Master_Permissions_Type1;
-      Region_Index : constant Region_Index_Type :=
-         Task_Data_Region_Index'Enum_Rep;
+      Type1_Permissions : Bus_Master_Permissions_Type1;
+      Type2_Permissions : Bus_Master_Permissions_Type2;
    begin
-      case Task_Data_Region.Permissions is
+      case Data_Region.Permissions is
          when Read_Only =>
-            MPU_Permissions := Read_Only_Permissions;
+            if Bus_Master <= Dma_Device_ENET then
+               Type1_Permissions := Type1_Read_Only_Permissions;
+            else
+               Type2_Permissions := Type2_Read_Only_Permissions;
+            end if;
          when Read_Write =>
-            MPU_Permissions := Read_Write_Permissions;
+            if Bus_Master <= Dma_Device_ENET then
+               Type1_Permissions := Type1_Read_Write_Permissions;
+            else
+               Type2_Permissions := Type2_Read_Write_Permissions;
+            end if;
       end case;
 
-      Set_Mpu_Region_For_Cpu (
-            Region_Index,
-            Task_Data_Region.First_Address,
-            Task_Data_Region.Last_Address,
-            MPU_Permissions);
+      Define_Mpu_Region (
+            Data_Region_Index,
+            Bus_Master,
+            Data_Region.First_Address,
+            Data_Region.Last_Address,
+            Type1_Permissions,
+            Type2_Permissions);
 
-   end Set_Task_Data_Region;
+   end Define_MPU_Data_Region;
 
-   ----------------------------
-   -- Unset_Task_Data_Region --
-   ----------------------------
+   ----------------
+   -- Initialize --
+   ----------------
 
-   procedure Unset_Task_Data_Region (
-      Task_Data_Region_Index : Task_Data_Region_Index_Type)
+   procedure Initialize is
+      CESR_Value : CESR_Register_Type;
+      WORD3_Value : WORD3_Register_Type;
+      RGDAAC_Value : RGDAAC_Register_Type;
+   begin
+      pragma Assert (not Memory_Protection_Var.Initialized);
+
+      if System.BB.Parameters.Use_MPU then
+         --
+         --  Verify that the MPU has enough regions:
+         --
+         CESR_Value := MPU_Registers.CESR;
+         pragma Assert (Natural (CESR_Value.NRGD) <=
+                        Num_Mpu_Regions_Table'Last);
+
+         Memory_Protection_Var.Num_Regions :=
+            Num_Mpu_Regions_Table (Natural (CESR_Value.NRGD));
+
+         pragma Assert (Memory_Protection_Var.Num_Regions >=
+                        MPU_Region_Index_Type'Enum_Rep (
+                           MPU_Region_Index_Type'Last));
+
+         --
+         --  Disable MPU to configure it:
+         --
+         MPU_Registers.CESR := (VLD => 0, others => <>);
+
+         --
+         --  Make background region only accessible in CPU privleged mode:
+         --
+         --  NOTE: The background region is defined by default as the whole
+         --  address space.
+         --  Only its permissions can be changed. To avoid disabling the region
+         --  while changing its access permissions, modify register
+         --  RGDAAC[region] instead of WORD[region][2].
+         --
+         RGDAAC_Value :=
+            (Bus_Master_CPU_Core_Perms =>
+               (Supervisor_Mode_Permissions => Read_Write_Execute_Allowed,
+                others => <>),
+             others => <>);
+         MPU_Registers.RGDAAC (Background_Region'Enum_Rep) := RGDAAC_Value;
+
+         --
+         --  Set region 1 for the code in flash to be executable in
+         --  unprivileged mode:
+         --
+         Define_Mpu_Region (
+            Global_Unprivileged_Code_Region,
+            Cpu_Core0,
+            Flash_Text_Start'Address,
+            To_Address (To_Integer (Flash_Text_End'Address) - 1),
+            Type1_Read_Execute_Permissions,
+            Type2_Permissions => (others => <>));
+
+         --
+         --  Set remaining regions as invalid to save power
+         --
+         for I in Global_Unprivileged_Code_Region'Enum_Rep ..
+                  Region_Index_Type'Last loop
+            WORD3_Value := (VLD => 0, others => <>);
+            MPU_Registers.Region_Descriptors (I).WORD3 := WORD3_Value;
+         end loop;
+
+         --
+         --  Enable MPU:
+         --
+         MPU_Registers.CESR := (VLD => 1, others => <>);
+      else
+         Disable_MPU;
+      end if;
+
+      --
+      --  NOTE: access to background region will be disabled upon the first
+      --  task context switch
+      --
+      Memory_Protection_Var.Initialized := True;
+   end Initialize;
+
+   -----------------
+   -- Initialized --
+   -----------------
+
+   function Initialized return Boolean is (Memory_Protection_Var.Initialized);
+
+   --------------------------
+   -- Is_MPU_Region_In_Use --
+   --------------------------
+
+   function Is_MPU_Region_In_Use (MPU_Region_Index : MPU_Region_Index_Type)
+      return Boolean
+   is
+      Region_Index : constant Region_Index_Type := MPU_Region_Index'Enum_Rep;
+      WORD3_Value : constant WORD3_Register_Type :=
+          MPU_Registers.Region_Descriptors (Region_Index).WORD3;
+   begin
+      return WORD3_Value.VLD = 1;
+   end Is_MPU_Region_In_Use;
+
+   ------------------------------
+   -- Undefine_MPU_Data_Region --
+   ------------------------------
+
+   procedure Undefine_MPU_Data_Region (
+      Data_Region_Index : MPU_Region_Index_Type)
    is
       Region_Index : constant Region_Index_Type :=
-         Task_Data_Region_Index'Enum_Rep;
+         Data_Region_Index'Enum_Rep;
    begin
       --
       --  Disable access to the region:
       --
       MPU_Registers.Region_Descriptors (Region_Index).WORD3 :=
          (VLD => 0, others => <>);
-   end Unset_Task_Data_Region;
+   end Undefine_MPU_Data_Region;
 
 end Memory_Protection;
