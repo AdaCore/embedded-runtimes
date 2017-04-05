@@ -25,6 +25,13 @@
 --  POSSIBILITY OF SUCH DAMAGE.
 --
 
+--
+--  Note: This package cannot contain any elaboration code, since procedure
+--  Initialize needs to be invoked from the startup code, before package
+--  elaboration code is executed
+--
+pragma Restrictions (No_Elaboration_Code);
+
 with System.Storage_Elements;
 private with Kinetis_K64F.MPU;
 
@@ -32,6 +39,8 @@ private with Kinetis_K64F.MPU;
 --  @summary Memory Protection Services
 --
 package Memory_Protection is
+   pragma Preelaborate;
+
    use System.Storage_Elements;
 
    --
@@ -45,6 +54,7 @@ package Memory_Protection is
       Background_Region,
       Global_Unprivileged_Code_Region,
       Task_Private_Stack_Region,
+      Task_Private_Secondary_Stack_Region,
       Task_Private_Component_Data_Region,
       Task_Private_Parameter_Data_Region,
       Task_Private_MMIO_Region,
@@ -61,32 +71,32 @@ package Memory_Protection is
       --
       Unused_Region1,
       Unused_Region2,
-      Unused_Region3,
-      Unused_Region4);
+      Unused_Region3);
 
    for MPU_Region_Index_Type use (Background_Region => 0,
                                   Global_Unprivileged_Code_Region => 1,
                                   Task_Private_Stack_Region => 2,
-                                  Task_Private_Component_Data_Region => 3,
-                                  Task_Private_Parameter_Data_Region => 4,
-                                  Task_Private_MMIO_Region => 5,
-                                  Dma_Device_ENET_Region1 => 6,
-                                  Dma_Device_ENET_Region2 => 7,
-                                  Unused_Region1 => 8,
-                                  Unused_Region2 => 9,
-                                  Unused_Region3 => 10,
-                                  Unused_Region4 => 11);
+                                  Task_Private_Secondary_Stack_Region => 3,
+                                  Task_Private_Component_Data_Region => 4,
+                                  Task_Private_Parameter_Data_Region => 5,
+                                  Task_Private_MMIO_Region => 6,
+                                  Dma_Device_ENET_Region1 => 7,
+                                  Dma_Device_ENET_Region2 => 8,
+                                  Unused_Region1 => 9,
+                                  Unused_Region2 => 10,
+                                  Unused_Region3 => 11);
 
-   type Data_Region_Permisions_Type is (Read_Only,
+   type Data_Region_Permisions_Type is (None,
+                                        Read_Only,
                                         Read_Write);
 
    --
    --  Address range and permissions for a given data region
    --
-   type Data_Region_Type is limited record
+   type Data_Region_Type is record
       First_Address : System.Address;
       Last_Address : System.Address;
-      Permissions : Data_Region_Permisions_Type;
+      Permissions : Data_Region_Permisions_Type := None;
    end record;
 
    --
@@ -111,6 +121,8 @@ package Memory_Protection is
    --
    --  Disable the MPU hardware
    --
+
+   procedure Enable_Peripheral_Unprivileged_Access; -- ???
 
    function Initialized return Boolean
       with Inline;
@@ -184,18 +196,27 @@ package Memory_Protection is
               and
               DMA_Master in Dma_Device_DMA_Engine .. Dma_Device_Master7;
 
+   function Enter_Privileged_Mode return Boolean;
+   pragma Machine_Attribute (Enter_Privileged_Mode, "naked");
+   --
+   --  Return True if the CPU was in privilged mode before, False otherwise
+   --
+
+   procedure Exit_Privileged_Mode;
+   pragma Machine_Attribute (Enter_Privileged_Mode, "naked");
+
 private
    use Kinetis_K64F.MPU;
 
    function Is_Valid_Data_Region (Data_Region : Data_Region_Type)
       return Boolean is
-   (To_Integer (Data_Region.First_Address) <
-                     To_Integer (Data_Region.Last_Address)
-                  and
-                  To_Integer (Data_Region.First_Address) mod
-                     MPU_Region_Alignment = 0
-                  and
-                  (To_Integer (Data_Region.Last_Address) + 1) mod
-                     MPU_Region_Alignment = 0);
+   (Data_Region.Permissions /= None
+    and
+    To_Integer (Data_Region.First_Address) <
+                   To_Integer (Data_Region.Last_Address)
+    and
+    To_Integer (Data_Region.First_Address) mod MPU_Region_Alignment = 0
+    and
+    (To_Integer (Data_Region.Last_Address) + 1) mod MPU_Region_Alignment = 0);
 
 end Memory_Protection;

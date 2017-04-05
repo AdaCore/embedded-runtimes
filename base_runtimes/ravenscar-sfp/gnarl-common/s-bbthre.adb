@@ -138,6 +138,7 @@ package body System.BB.Threads is
       This_CPU      : System.Multiprocessors.CPU_Range;
       Stack_Top     : System.Address;
       Stack_Bottom  : System.Address) is
+      use System.Storage_Elements;
    begin
       --  The environment thread executes the main procedure of the program
 
@@ -199,6 +200,27 @@ package body System.BB.Threads is
          Stack_Pointer   => (if System.Parameters.Stack_Grows_Down
                              then Id.Top_Of_Stack
                              else Id.Bottom_Of_Stack));
+
+      --
+      --  Set task-private MPU region for primary stack:
+      --
+      Id.Thread_Data_Regions.Stack_Region :=
+        (First_Address => Id.Bottom_Of_Stack,
+         Last_Address => To_Address (To_Integer (Id.Top_Of_Stack) - 1),
+         Permissions => Memory_Protection.Read_Write);
+      --  ???
+      Id.Thread_Data_Regions.Component_Data_Region :=
+        (First_Address => To_Address (Integer_Address (16#1FFF0000#)),
+         Last_Address => To_Address (Integer_Address (16#2002FFFF#)),
+         Permissions => Memory_Protection.Read_Write);
+
+      Id.Thread_Data_Regions.MMIO_Region :=
+        (First_Address => To_Address (Integer_Address (16#40000000#)),
+         Last_Address => To_Address (Integer_Address (16#400FFFFF#)),
+         Permissions => Memory_Protection.Read_Write);
+
+      --  TODO: Also need to set region for secondary stack???
+
    end Initialize_Thread;
 
    ----------------

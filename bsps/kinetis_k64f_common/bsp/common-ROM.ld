@@ -89,7 +89,7 @@ SECTIONS
   {
     *(.lit)
     *(.rodata .rodata.* .gnu.linkonce.r*)
-    . = ALIGN(0x4);
+    . = ALIGN(MPU_REGION_ALIGNMENT);
     __rom_end = .;
   } > flash_text
 

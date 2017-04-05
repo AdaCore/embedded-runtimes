@@ -40,6 +40,7 @@ with System.BB.Time;
 with System.BB.Interrupts;
 with System.Multiprocessors;
 with System.BB.CPU_Primitives.Multiprocessors;
+with Memory_Protection;
 
 package System.BB.Threads is
    pragma Preelaborate;
@@ -136,6 +137,9 @@ package System.BB.Threads is
 
       Execution_Time : System.BB.Time.Composite_Execution_Time;
       --  CPU time spent for this thread
+
+      Thread_Data_Regions : Memory_Protection.Task_Data_Regions_Type;
+      --  Thread-private MPU regions for this thread
    end record;
 
    function Get_Affinity

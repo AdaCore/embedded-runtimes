@@ -57,7 +57,9 @@ package body Cpu_Exception_Handlers is
    ----------------------------------
 
    procedure Common_Cpu_Exception_Handler (Msg : String;
-                                           Return_Address : Unsigned_32) is
+                                           Return_Address : Unsigned_32)
+   is
+      use System.Storage_Elements;
    begin
       System.BB.CPU_Primitives.Disable_Interrupts;
       System.Text_IO.Extended.Put_String (ASCII.LF & Msg & ASCII.LF);
@@ -70,7 +72,6 @@ package body Cpu_Exception_Handlers is
          --  pointer, so the offending code was a task
          --
          declare
-            use System.Storage_Elements;
             Stack : array (0 .. 6) of Unsigned_32 with Address =>
                        To_Address (Integer_Address (Get_PSP_Register));
             PC_At_Exception : constant Unsigned_32  := Stack (6);
@@ -78,16 +79,14 @@ package body Cpu_Exception_Handlers is
             System.Text_IO.Extended.Put_String (
                "Code address where fault happened:" & PC_At_Exception'Image &
                ASCII.LF);
+            raise Program_Error with Msg;
          end;
       else
          System.Text_IO.Extended.Put_String (
             "Fault happened in an ISR (Return Address" &
             Return_Address'Image & ")" & ASCII.LF);
+         raise Program_Error with Msg;
       end if;
-
-      loop
-         null;
-      end loop;
    end Common_Cpu_Exception_Handler;
 
    ---------------------

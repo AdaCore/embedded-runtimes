@@ -91,8 +91,9 @@ package System.BB.Parameters is
    --  vectors for each.
 
    Context_Buffer_Capacity : constant := 10;
-   --  The context buffer contains registers r4 .. r11 and the SP_process
-   --  (PSP). The size is rounded up to an even number for alignment
+   --  The context buffer contains registers r4 .. r11, the SP_process
+   --  (PSP) and the CONTROL register. The size is rounded up to an even number
+   --  for alignment
 
    ------------
    -- Stacks --

@@ -38,6 +38,7 @@ with System.BB.Threads;
 with System.BB.Time;
 
 with System.BB.Threads.Queues;
+with System.Text_IO.Extended; -- ???
 
 --  The following pragma Elaborate is anomalous. We generally do not like
 --  to use pragma Elaborate, since it disconnects the static elaboration
