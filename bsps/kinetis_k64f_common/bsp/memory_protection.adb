@@ -28,6 +28,7 @@
 with System.BB.Parameters;
 with Interfaces.Bit_Types;
 with System.Machine_Code;
+with System.Text_IO.Extended; --  ???
 
 package body Memory_Protection is
    use Interfaces.Bit_Types;
@@ -48,7 +49,7 @@ package body Memory_Protection is
       Last_Address : System.Address;
       Type1_Permissions : Bus_Master_Permissions_Type1;
       Type2_Permissions : Bus_Master_Permissions_Type2)
-      with Pre => MPU_Region_Index >= Global_Unprivileged_Code_Region;
+      with Pre => MPU_Region_Index >= Global_Code_Region;
    --
    --  Configure an MPU region to cover a given range of addresses and with
    --  the given access permissions, for the givenbus master.
@@ -72,24 +73,29 @@ package body Memory_Protection is
    --
 
    --  Start address of the text section in flash
-   Flash_Text_Start : constant Unsigned_32;
-   pragma Import (Asm, Flash_Text_Start, "__flash_text_start");
+   --  Flash_Text_Start : constant Unsigned_32;
+   --  pragma Import (Asm, Flash_Text_Start, "__flash_text_start");
 
    --  End address of the text section in flash
    --  Flash_Text_End : constant Unsigned_32;
    --  pragma Import (Asm, Flash_Text_End, "__flash_text_end");
 
    --  End address of the rodata section in flash
-   Rom_End : constant Unsigned_32;
-   pragma Import (Asm, Rom_End, "__rom_end");
+   --  Rom_End : constant Unsigned_32;
+   --  pragma Import (Asm, Rom_End, "__rom_end");
 
-   --  Start address of the main stack (stack for ISRs)
-   --  Main_Stack_Start : constant Unsigned_32;
-   --  pragma Import (Asm, Main_Stack_Start, "__stack_start");
+   --  Start address of the main stack (for ISRs)
+   Main_Stack_Start : constant Unsigned_32;
+   pragma Import (Asm, Main_Stack_Start, "__stack_start");
 
-   --  Start address of the main stack (end for ISRs)
-   --  Main_Stack_End : constant Unsigned_32;
-   --  pragma Import (Asm, Main_Stack_End, "__stack_end");
+   --  End address of the main stack (for ISRs)
+   Main_Stack_End : constant Unsigned_32;
+   pragma Import (Asm, Main_Stack_End, "__stack_end");
+
+   Enable_Background_Data_Region_Count : Unsigned_32 := 0
+      with Atomic, Volatile;
+
+   procedure Dump_MPU_Region_Descriptors with Unreferenced;
 
    ----------------------------
    -- Define_DMA_Data_Region --
@@ -109,15 +115,6 @@ package body Memory_Protection is
    begin
       Define_MPU_Data_Region (Data_Region_Index, DMA_Master, Data_Region);
    end Define_DMA_Data_Region;
-
-   -----------------
-   -- Disable_MPU --
-   -----------------
-
-   procedure Disable_MPU is
-   begin
-      MPU_Registers.CESR := (VLD => 0, others => <>);
-   end Disable_MPU;
 
    -----------------------
    -- Define_Mpu_Region --
@@ -234,15 +231,71 @@ package body Memory_Protection is
             Type2_Permissions);
    end Define_MPU_Data_Region;
 
-   -------------------------------------------
-   -- Enable_Peripheral_Unprivileged_Access --
-   -------------------------------------------
+   ------------------------------------
+   -- Disable_Background_Data_Region --
+   ------------------------------------
 
-   procedure Enable_Peripheral_Unprivileged_Access
-   is
+   procedure Disable_Background_Data_Region is
+      RGDAAC_Value : RGDAAC_Register_Type;
    begin
-      null; --  ???
-   end Enable_Peripheral_Unprivileged_Access;
+      pragma Assert (Enable_Background_Data_Region_Count > 0);
+
+      Enable_Background_Data_Region_Count :=
+         Enable_Background_Data_Region_Count - 1;
+
+      if Enable_Background_Data_Region_Count = 0 then
+         System.Machine_Code.Asm ("isb", Volatile => True);
+         RGDAAC_Value := MPU_Registers.RGDAAC (Background_Region'Enum_Rep);
+         RGDAAC_Value.Bus_Master_CPU_Core_Perms.User_Mode_Permissions :=
+            (Read_Allowed => 0, Write_Allowed => 0, Execute_Allowed => 0);
+         MPU_Registers.RGDAAC (Background_Region'Enum_Rep) := RGDAAC_Value;
+      end if;
+   end Disable_Background_Data_Region;
+
+   -----------------
+   -- Disable_MPU --
+   -----------------
+
+   procedure Disable_MPU is
+   begin
+      MPU_Registers.CESR := (VLD => 0, others => <>);
+   end Disable_MPU;
+
+   ---------------------------------
+   -- Dump_MPU_Region_Descriptors --
+   ---------------------------------
+
+   procedure Dump_MPU_Region_Descriptors is
+   begin
+      for I in Region_Index_Type loop
+         declare
+            Word2_Val : Unsigned_32 with Address =>
+               MPU_Registers.Region_Descriptors (I).WORD2'Address;
+            Word3_Val : Unsigned_32 with Address =>
+               MPU_Registers.Region_Descriptors (I).WORD3'Address;
+         begin
+            System.Text_IO.Extended.Put_String ("*** Region " &
+               I'Image & ": " &
+               Word2_Val'Image & ", " &  Word3_Val'Image & ASCII.LF);
+         end;
+      end loop;
+   end Dump_MPU_Region_Descriptors;
+
+   -----------------------------------
+   -- Enable_Background_Data_Region --
+   -----------------------------------
+
+   procedure Enable_Background_Data_Region is
+      RGDAAC_Value : RGDAAC_Register_Type;
+   begin
+      RGDAAC_Value := MPU_Registers.RGDAAC (Background_Region'Enum_Rep);
+      RGDAAC_Value.Bus_Master_CPU_Core_Perms.User_Mode_Permissions :=
+         (Read_Allowed => 1, Write_Allowed => 1, Execute_Allowed => 0);
+      MPU_Registers.RGDAAC (Background_Region'Enum_Rep) := RGDAAC_Value;
+      System.Machine_Code.Asm ("isb", Volatile => True);
+      Enable_Background_Data_Region_Count :=
+         Enable_Background_Data_Region_Count + 1;
+   end Enable_Background_Data_Region;
 
    ---------------------------
    -- Enter_Privileged_Mode --
@@ -313,9 +366,15 @@ package body Memory_Protection is
                                     Read_Allowed => 1),
           others => <>);
 
+      Type1_Read_Write_Permissions : constant Bus_Master_Permissions_Type1 :=
+         (User_Mode_Permissions => (Execute_Allowed => 0,
+                                    Write_Allowed => 1,
+                                    Read_Allowed => 1),
+          others => <>);
+
       CESR_Value : CESR_Register_Type;
       WORD3_Value : WORD3_Register_Type;
-      RGDAAC_Value : RGDAAC_Register_Type;
+      Dummy_Type2_Permissions : Bus_Master_Permissions_Type2;
    begin
       pragma Assert (not Memory_Protection_Var.Initialized);
 
@@ -340,45 +399,79 @@ package body Memory_Protection is
          MPU_Registers.CESR := (VLD => 0, others => <>);
 
          --
-         --  Make background region only accessible in CPU privleged mode:
+         --  Disable access to all regions other than the background region:
          --
-         --  NOTE: The background region is defined by default as the whole
-         --  address space.
-         --  Only its permissions can be changed. To avoid disabling the region
-         --  while changing its access permissions, modify register
-         --  RGDAAC[region] instead of WORD[region][2].
-         --
-         RGDAAC_Value :=
-            (Bus_Master_CPU_Core_Perms =>
-               (Supervisor_Mode_Permissions => Read_Write_Execute_Allowed,
-                others => <>),
-             others => <>);
-         MPU_Registers.RGDAAC (Background_Region'Enum_Rep) := RGDAAC_Value;
-
-         --
-         --  Set region 1 for the code in flash to be executable in
-         --  unprivileged mode:
-         --
-         Define_Mpu_Region (
-            Global_Unprivileged_Code_Region,
-            Cpu_Core0,
-            Flash_Text_Start'Address,
-            To_Address (To_Integer (Rom_End'Address) - 1),
-            Type1_Read_Execute_Permissions,
-            Type2_Permissions => (others => <>));
-
-         --
-         --  Set remaining regions as invalid to save power
-         --
-         for I in Global_Unprivileged_Code_Region'Enum_Rep + 1 ..
+         WORD3_Value := (VLD => 0, others => <>);
+         for I in Background_Region'Enum_Rep + 1 ..
                   Region_Index_Type'Last loop
-            WORD3_Value := (VLD => 0, others => <>);
             MPU_Registers.Region_Descriptors (I).WORD3 := WORD3_Value;
          end loop;
 
          --
+         --  Set global region for the code and contants in flash:
+         --
+         Define_Mpu_Region (
+            Global_Code_Region,
+            Cpu_Core0,
+            --  Flash_Text_Start'Address,
+            To_Address (Integer_Address (16#0#)),
+            --  To_Address (To_Integer (Rom_End'Address) - 1),
+            To_Address (Integer_Address (16#7ff_ffff#)),
+            Type1_Read_Execute_Permissions,
+            Dummy_Type2_Permissions);
+
+         --
+         --  Set MPU region for ISR stack:
+         --
+         Define_Mpu_Region (
+            Global_ISR_Stack_Region,
+            Cpu_Core0,
+            To_Address (To_Integer (Main_Stack_Start'Address)),
+            To_Address (To_Integer (Main_Stack_End'Address) - 1),
+            Type1_Read_Write_Permissions,
+            Dummy_Type2_Permissions);
+
+         --
+         --  Set region for ARM Core control registers:
+         --
+         Define_Mpu_Region (
+            Global_ARM_Core_MMIO_Region,
+            Cpu_Core0,
+            To_Address (Integer_Address (16#E000_0000#)),
+            To_Address (Integer_Address (16#E00F_FFFF#)),
+            Type1_Read_Write_Permissions,
+            Dummy_Type2_Permissions);
+
+         --  ???
+         Define_Mpu_Region (
+            Task_Private_Component_Data_Region,
+            Cpu_Core0,
+            To_Address (Integer_Address (16#1FFF_0000#)),
+            To_Address (Integer_Address (16#2002_FFFF#)),
+            Type1_Read_Write_Permissions,
+            Dummy_Type2_Permissions);
+
+         Define_Mpu_Region (
+            Task_Private_MMIO_Region,
+            Cpu_Core0,
+            To_Address (Integer_Address (16#4000_0000#)),
+            To_Address (Integer_Address (16#400F_FFFF#)),
+            Type1_Read_Write_Permissions,
+            Dummy_Type2_Permissions);
+
+         --
+         --  Disable access to background region for all  masters:
+         --
+         --  NOTE: We need to do this through the region's RGDAAC register
+         --  instead of modifying the WORD2 or WORD3, as doing that for
+         --  the background region will cause a bus fault.
+         --
+         MPU_Registers.RGDAAC (Background_Region'Enum_Rep) := (others => <>);
+
+         --
          --  Enable MPU:
          --
+         System.Machine_Code.Asm ("isb", Volatile => True);
          MPU_Registers.CESR := (VLD => 1, others => <>);
       else
          Disable_MPU;
@@ -410,6 +503,54 @@ package body Memory_Protection is
    begin
       return WORD3_Value.VLD = 1;
    end Is_MPU_Region_In_Use;
+
+   ---------------------------------
+   -- Set_Thread_MPU_Data_Regions --
+   ---------------------------------
+
+   procedure Set_Thread_MPU_Data_Regions (
+      Thread_Data_Regions : Task_Data_Regions_Type)
+   is
+   begin
+      Define_MPU_Data_Region (
+         Data_Region_Index => Task_Private_Stack_Region,
+         Bus_Master => Cpu_Core0,
+         Data_Region => Thread_Data_Regions.Stack_Region);
+
+      if  Thread_Data_Regions.Component_Data_Region.Permissions /= None then
+         Define_MPU_Data_Region (
+           Data_Region_Index => Task_Private_Component_Data_Region,
+           Bus_Master => Cpu_Core0,
+           Data_Region => Thread_Data_Regions.
+                             Component_Data_Region);
+      else
+         Undefine_MPU_Data_Region (
+            Data_Region_Index => Task_Private_Component_Data_Region);
+      end if;
+
+      if Thread_Data_Regions.
+            Parameter_Data_Region.Permissions /= None
+      then
+         Define_MPU_Data_Region (
+           Data_Region_Index => Task_Private_Parameter_Data_Region,
+           Bus_Master => Cpu_Core0,
+           Data_Region => Thread_Data_Regions.Parameter_Data_Region);
+      else
+         Undefine_MPU_Data_Region (
+            Data_Region_Index => Task_Private_Parameter_Data_Region);
+      end if;
+
+      if Thread_Data_Regions.MMIO_Region.Permissions /= None
+      then
+         Define_MPU_Data_Region (
+           Data_Region_Index => Task_Private_MMIO_Region,
+           Bus_Master => Cpu_Core0,
+           Data_Region => Thread_Data_Regions.MMIO_Region);
+      else
+         Undefine_MPU_Data_Region (
+           Data_Region_Index => Task_Private_MMIO_Region);
+      end if;
+   end Set_Thread_MPU_Data_Regions;
 
    ------------------------------
    -- Undefine_MPU_Data_Region --

@@ -52,9 +52,10 @@ package Memory_Protection is
       --  (CPU core is the bus master):
       --
       Background_Region,
-      Global_Unprivileged_Code_Region,
+      Global_Code_Region,
+      Global_ISR_Stack_Region,
+      Global_ARM_Core_MMIO_Region,
       Task_Private_Stack_Region,
-      Task_Private_Secondary_Stack_Region,
       Task_Private_Component_Data_Region,
       Task_Private_Parameter_Data_Region,
       Task_Private_MMIO_Region,
@@ -70,21 +71,20 @@ package Memory_Protection is
       --  Unused region descriptors
       --
       Unused_Region1,
-      Unused_Region2,
-      Unused_Region3);
+      Unused_Region2);
 
    for MPU_Region_Index_Type use (Background_Region => 0,
-                                  Global_Unprivileged_Code_Region => 1,
-                                  Task_Private_Stack_Region => 2,
-                                  Task_Private_Secondary_Stack_Region => 3,
-                                  Task_Private_Component_Data_Region => 4,
-                                  Task_Private_Parameter_Data_Region => 5,
-                                  Task_Private_MMIO_Region => 6,
-                                  Dma_Device_ENET_Region1 => 7,
-                                  Dma_Device_ENET_Region2 => 8,
-                                  Unused_Region1 => 9,
-                                  Unused_Region2 => 10,
-                                  Unused_Region3 => 11);
+                                  Global_Code_Region => 1,
+                                  Global_ISR_Stack_Region => 2,
+                                  Global_ARM_Core_MMIO_Region => 3,
+                                  Task_Private_Stack_Region => 4,
+                                  Task_Private_Component_Data_Region => 5,
+                                  Task_Private_Parameter_Data_Region => 6,
+                                  Task_Private_MMIO_Region => 7,
+                                  Dma_Device_ENET_Region1 => 8,
+                                  Dma_Device_ENET_Region2 => 9,
+                                  Unused_Region1 => 10,
+                                  Unused_Region2 => 11);
 
    type Data_Region_Permisions_Type is (None,
                                         Read_Only,
@@ -122,8 +122,6 @@ package Memory_Protection is
    --  Disable the MPU hardware
    --
 
-   procedure Enable_Peripheral_Unprivileged_Access; -- ???
-
    function Initialized return Boolean
       with Inline;
    --  @private (Used only in contracts)
@@ -155,7 +153,7 @@ package Memory_Protection is
       Data_Region : Data_Region_Type)
       with Pre => Initialized
                   and
-                  Data_Region_Index > Global_Unprivileged_Code_Region
+                  Data_Region_Index > Global_Code_Region
                   and
                   not Is_MPU_Region_In_Use (Data_Region_Index)
                   and
@@ -173,7 +171,7 @@ package Memory_Protection is
       Data_Region_Index : MPU_Region_Index_Type)
       with Pre => Initialized
            and
-           Data_Region_Index > Global_Unprivileged_Code_Region
+           Data_Region_Index > Global_Code_Region
            and
            Is_MPU_Region_In_Use (Data_Region_Index);
    --
@@ -195,6 +193,13 @@ package Memory_Protection is
               Initialized
               and
               DMA_Master in Dma_Device_DMA_Engine .. Dma_Device_Master7;
+
+   procedure Set_Thread_MPU_Data_Regions (
+      Thread_Data_Regions : Task_Data_Regions_Type);
+
+   procedure Disable_Background_Data_Region;
+
+   procedure Enable_Background_Data_Region;
 
    function Enter_Privileged_Mode return Boolean;
    pragma Machine_Attribute (Enter_Privileged_Mode, "naked");

@@ -36,7 +36,6 @@ with System.BB.Threads.Queues;
 with System.BB.Time;
 with System.Machine_Code; use System.Machine_Code;
 with Memory_Protection;
-with System.Text_IO.Extended; --  ???
 
 package body System.BB.CPU_Primitives is
    use Parameters;
@@ -344,6 +343,14 @@ package body System.BB.CPU_Primitives is
 
       Asm
         (Template =>
+         --
+         --  Enable CPU access to the background region temporarily so
+         --  that the Ada runtime can access its data structures:
+         --
+         "push {lr}" & NL &
+         "bl  memory_protection__enable_background_data_region" & NL &
+         "pop {lr}" & NL &
+
          "movw r2, #:lower16:__gnat_running_thread_table" & NL &
          "movt r2, #:upper16:__gnat_running_thread_table" & NL &
          "mrs  r12, PSP "       & NL & -- Retrieve current PSP
@@ -386,13 +393,14 @@ package body System.BB.CPU_Primitives is
          "pop  {r3, lr}" & NL &
 
          --
-         --  Restore Save R4-R11, PSP (stored in R12) and CONYTROL
+         --  Restore Save R4-R11, PSP (stored in R12) and CONTROL
          --
          "ldm  r3, {r4-r12}"        & NL & -- Load context and new PSP
          "ldr  r0, [r3, #(9*4)]"    & NL &
          "msr  control, r0"         & NL & -- This may cause change to
                                            -- unprivileged mode when returning
                                            -- to thread mode
+         "isb"                      & NL &
 
          --  If floating point is enabled, check bit 0 of PSP to see if we
          --  need to restore the floating point context.
@@ -409,7 +417,13 @@ package body System.BB.CPU_Primitives is
 
          "msr  PSP, r12" & NL &        -- Update PSP
 
-         "isb" & NL &
+         --
+         --   disable access to the background region
+         --
+         "push {lr}" & NL &
+         "bl  memory_protection__disable_background_data_region" & NL &
+         "pop {lr}" & NL &
+
          "bx   lr",                    -- return to caller
          Volatile => True);
    end Pend_SV_Handler;
@@ -422,58 +436,17 @@ package body System.BB.CPU_Primitives is
    is
       use Memory_Protection;
 
-      Current_Thread_Descriptor_Ptr : constant Thread_Id :=
+      Current_Thread_Descriptor_Ptr : Thread_Id renames
          Running_Thread_Table (CPU'First);
       --
-      --  TODO: This only works for CPU core 0. If myutliple cores ever need to
+      --  TODO: This only works for CPU core 0. If mutliple cores ever need to
       --  be supported, that needs to be handled here.
       --
-
    begin
-      Define_MPU_Data_Region (
-         Data_Region_Index => Task_Private_Stack_Region,
-         Bus_Master => Cpu_Core0,
-         Data_Region => Current_Thread_Descriptor_Ptr.Thread_Data_Regions.
-                           Stack_Region);
+      Memory_Protection.Set_Thread_MPU_Data_Regions (
+         Current_Thread_Descriptor_Ptr.Thread_Data_Regions);
 
-      if  Current_Thread_Descriptor_Ptr.Thread_Data_Regions.
-             Component_Data_Region.Permissions /= None
-      then
-         Define_MPU_Data_Region (
-           Data_Region_Index => Task_Private_Component_Data_Region,
-           Bus_Master => Cpu_Core0,
-           Data_Region => Current_Thread_Descriptor_Ptr.Thread_Data_Regions.
-                             Component_Data_Region);
-      else
-         Undefine_MPU_Data_Region (
-            Data_Region_Index => Task_Private_Component_Data_Region);
-      end if;
-
-      if Current_Thread_Descriptor_Ptr.Thread_Data_Regions.
-            Parameter_Data_Region.Permissions /= None
-      then
-         Define_MPU_Data_Region (
-           Data_Region_Index => Task_Private_Parameter_Data_Region,
-           Bus_Master => Cpu_Core0,
-           Data_Region => Current_Thread_Descriptor_Ptr.Thread_Data_Regions.
-                             Parameter_Data_Region);
-      else
-         Undefine_MPU_Data_Region (
-            Data_Region_Index => Task_Private_Parameter_Data_Region);
-      end if;
-
-      if Current_Thread_Descriptor_Ptr.Thread_Data_Regions.
-            MMIO_Region.Permissions /= None
-      then
-         Define_MPU_Data_Region (
-           Data_Region_Index => Task_Private_MMIO_Region,
-           Bus_Master => Cpu_Core0,
-           Data_Region => Current_Thread_Descriptor_Ptr.Thread_Data_Regions.
-                             MMIO_Region);
-      else
-         Undefine_MPU_Data_Region (
-            Data_Region_Index => Task_Private_MMIO_Region);
-      end if;
+      Memory_Protection.Disable_Background_Data_Region;
    end Set_Thread_MPU_Data_Regions;
 
    ---------------------
@@ -482,8 +455,8 @@ package body System.BB.CPU_Primitives is
 
    procedure SV_Call_Handler is
    begin
-      System.Text_IO.Extended.Put_String (
-         "*** Enter  SV_Call_Handler ***" & NL); -- ???
+      --  System.Text_IO.Extended.Put_String (
+      --   "*** Enter  SV_Call_Handler ***" & NL); -- ???
       --  Clear nPRIV bit in the CPU control register to stay in privileged
       --  mode upon return from the exception
       Asm
@@ -495,8 +468,8 @@ package body System.BB.CPU_Primitives is
          "isb",
          Volatile => True, Clobber => "memory");
 
-      System.Text_IO.Extended.Put_String (
-         "*** Exit  SV_Call_Handler ***" & NL); -- ???
+      --  System.Text_IO.Extended.Put_String (
+      --   "*** Exit  SV_Call_Handler ***" & NL); -- ???
    end SV_Call_Handler;
 
    -----------------
