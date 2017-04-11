@@ -114,9 +114,13 @@ package body System.BB.CPU_Primitives is
    procedure GNAT_Error_Handler (Trap : Vector_Id);
    pragma No_Return (GNAT_Error_Handler);
 
-   procedure Set_Thread_MPU_Data_Regions;
-   pragma Export (Asm, Set_Thread_MPU_Data_Regions,
-                  "__set_thread_mpu_data_regions");
+   procedure Restore_Thread_MPU_Data_Regions;
+   pragma Export (Asm, Restore_Thread_MPU_Data_Regions,
+                  "__restore_thread_mpu_data_regions");
+
+   procedure Save_Thread_MPU_Data_Regions;
+   pragma Export (Asm, Save_Thread_MPU_Data_Regions,
+                  "__save_thread_mpu_data_regions");
 
    -----------------------
    -- Context Switching --
@@ -134,7 +138,7 @@ package body System.BB.CPU_Primitives is
    --  R4 .. R11 are at offset 0 .. 7
 
    SP_process : constant Context_Id := 8;
-   CONTROL_Register_Index : constant Context_Id := 9;
+   --  CONTROL_Register_Index : constant Context_Id := 9;
 
    type Hardware_Context is record
       R0, R1, R2, R3   : Word;
@@ -351,6 +355,10 @@ package body System.BB.CPU_Primitives is
          "bl  memory_protection__enable_background_data_region" & NL &
          "pop {lr}" & NL &
 
+         --
+         --  Save CPU context for the old current task:
+         --
+
          "movw r2, #:lower16:__gnat_running_thread_table" & NL &
          "movt r2, #:upper16:__gnat_running_thread_table" & NL &
          "mrs  r12, PSP "       & NL & -- Retrieve current PSP
@@ -373,8 +381,20 @@ package body System.BB.CPU_Primitives is
          --  Save R4-R11, PSP (stored in R12) and CONTROL
          --
          "stm  r3, {r4-r12}"        & NL & -- Save context
-         "mrs  r0, control"         & NL &
-         "str r0, [r3, #(9*4)]"     & NL &
+         --  ??? "mrs  r0, control"         & NL &
+         --  ??? "str r0, [r3, #(9*4)]"     & NL &
+
+         --
+         --  Save thread-specific data region descriptors from the MPU for the
+         --  old current task:
+         --
+         "push {r2, r3, lr}" & NL &
+         "bl   __save_thread_mpu_data_regions" & NL &
+         "pop  {r2, r3, lr}" & NL &
+
+         --
+         --  Restore CPU context for new current task:
+         --
 
          "movw r3, #:lower16:first_thread_table" & NL &
          "movt r3, #:upper16:first_thread_table" & NL &
@@ -382,22 +402,22 @@ package body System.BB.CPU_Primitives is
          "str  r3, [r2]"            & NL & -- Update value of Pend_SV_Context
 
          --
-         --  Set thread-specific data regions in the MPU for the new current
-         --  task:
+         --  Restore thread-specific data region descriptors in the MPU for the
+         --  new current task:
          --
-         --  NOTE: Since we are running in privilged mode, we can still access
-         --  the stack of the old thread.
+         --  NOTE: Since we have the background region enabled, we can still
+         --  access the stack of the old thread, after calling this.
          --
          "push {r3, lr}" & NL &
-         "bl   __set_thread_mpu_data_regions" & NL &
+         "bl   __restore_thread_mpu_data_regions" & NL &
          "pop  {r3, lr}" & NL &
 
          --
          --  Restore Save R4-R11, PSP (stored in R12) and CONTROL
          --
          "ldm  r3, {r4-r12}"        & NL & -- Load context and new PSP
-         "ldr  r0, [r3, #(9*4)]"    & NL &
-         "msr  control, r0"         & NL & -- This may cause change to
+         --  ??? "ldr  r0, [r3, #(9*4)]"    & NL &
+         --  ??? "msr  control, r0"         & NL & -- This may cause change to
                                            -- unprivileged mode when returning
                                            -- to thread mode
          "isb"                      & NL &
@@ -418,7 +438,7 @@ package body System.BB.CPU_Primitives is
          "msr  PSP, r12" & NL &        -- Update PSP
 
          --
-         --   disable access to the background region
+         --  Disable access to the background region:
          --
          "push {lr}" & NL &
          "bl  memory_protection__disable_background_data_region" & NL &
@@ -428,14 +448,12 @@ package body System.BB.CPU_Primitives is
          Volatile => True);
    end Pend_SV_Handler;
 
-   ---------------------------------
-   -- Set_Thread_MPU_Data_Regions --
-   ---------------------------------
+   -------------------------------------
+   -- Restore_Thread_MPU_Data_Regions --
+   -------------------------------------
 
-   procedure Set_Thread_MPU_Data_Regions
+   procedure Restore_Thread_MPU_Data_Regions
    is
-      use Memory_Protection;
-
       Current_Thread_Descriptor_Ptr : Thread_Id renames
          Running_Thread_Table (CPU'First);
       --
@@ -443,11 +461,26 @@ package body System.BB.CPU_Primitives is
       --  be supported, that needs to be handled here.
       --
    begin
-      Memory_Protection.Set_Thread_MPU_Data_Regions (
+      Memory_Protection.Restore_Thread_MPU_Data_Regions (
          Current_Thread_Descriptor_Ptr.Thread_Data_Regions);
+   end Restore_Thread_MPU_Data_Regions;
 
-      Memory_Protection.Disable_Background_Data_Region;
-   end Set_Thread_MPU_Data_Regions;
+   ----------------------------------
+   -- Save_Thread_MPU_Data_Regions --
+   ----------------------------------
+
+   procedure Save_Thread_MPU_Data_Regions
+   is
+      Current_Thread_Descriptor_Ptr : Thread_Id renames
+         Running_Thread_Table (CPU'First);
+      --
+      --  TODO: This only works for CPU core 0. If mutliple cores ever need to
+      --  be supported, that needs to be handled here.
+      --
+   begin
+      Memory_Protection.Save_Thread_MPU_Data_Regions (
+         Current_Thread_Descriptor_Ptr.Thread_Data_Regions);
+   end Save_Thread_MPU_Data_Regions;
 
    ---------------------
    -- SV_Call_Handler --
@@ -553,7 +586,7 @@ package body System.BB.CPU_Primitives is
                      --   - nPRIV (bit 0) set (use Unprivileged thread mode)
                      --
                      --  CONTROL_Register_Index => 2#11#,
-                     CONTROL_Register_Index => 2#10#, -- ???
+                     --  CONTROL_Register_Index => 2#10#, -- ???
                      others => 0);
    end Initialize_Context;
 

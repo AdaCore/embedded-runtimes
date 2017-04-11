@@ -97,7 +97,7 @@ _start_rom:
         bl	microcontroller_clocks__initialize
         bl      reset_counter__update
         bl      memory_protection__initialize
-        bl      memory_protection__enable_background_data_region
+        /*bl      memory_protection__enable_background_data_region */
 	bl	main
 
 hang:   b .

@@ -38,6 +38,7 @@ with System.BB.Threads;
 with System.BB.Time;
 
 with System.BB.Threads.Queues;
+with Memory_Protection;
 with System.Text_IO.Extended; -- ???
 
 --  The following pragma Elaborate is anomalous. We generally do not like
@@ -62,6 +63,7 @@ package body System.BB.Protection is
       --  kernel data. This way, external interrupts cannot be raised.
 
       CPU_Primitives.Disable_Interrupts;
+      Memory_Protection.Enable_Background_Data_Region;
    end Enter_Kernel;
 
    ------------------
@@ -72,7 +74,7 @@ package body System.BB.Protection is
       use System.BB.Time;
       use type System.BB.Threads.Thread_Id;
       use type System.BB.Threads.Thread_States;
-
+      Active_Priority : Integer;
    begin
       --  Interrupts are always disabled when entering here
 
@@ -110,8 +112,9 @@ package body System.BB.Protection is
       --  Now we need to set the hardware interrupt masking level equal to the
       --  software priority of the task that is executing.
 
-      CPU_Primitives.Enable_Interrupts
-        (Threads.Queues.Running_Thread.Active_Priority);
+      Active_Priority := Threads.Queues.Running_Thread.Active_Priority;
+      Memory_Protection.Disable_Background_Data_Region;
+      CPU_Primitives.Enable_Interrupts (Active_Priority);
    end Leave_Kernel;
 
 end System.BB.Protection;

@@ -53,7 +53,7 @@ package System.BB.Parameters is
 
    Use_Watchdog_Timer : constant Boolean := False;
 
-   Use_MPU : constant Boolean := True;
+   Use_MPU : constant Boolean := False; --  True;
 
    ----------------
    -- Interrupts --

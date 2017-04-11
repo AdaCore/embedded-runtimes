@@ -33,7 +33,7 @@
 pragma Restrictions (No_Elaboration_Code);
 
 with System.Storage_Elements;
-private with Kinetis_K64F.MPU;
+with Interfaces.Bit_Types;
 
 --
 --  @summary Memory Protection Services
@@ -42,6 +42,12 @@ package Memory_Protection is
    pragma Preelaborate;
 
    use System.Storage_Elements;
+   use System;
+
+   --
+   --  MPU region alignment (in bytes)
+   --
+   MPU_Region_Alignment : constant := 32;
 
    --
    --  MPU regions assignment
@@ -55,10 +61,10 @@ package Memory_Protection is
       Global_Code_Region,
       Global_ISR_Stack_Region,
       Global_ARM_Core_MMIO_Region,
-      Task_Private_Stack_Region,
+      Task_Private_Stack_Data_Region,
       Task_Private_Component_Data_Region,
       Task_Private_Parameter_Data_Region,
-      Task_Private_MMIO_Region,
+      Task_Private_MMIO_Data_Region,
 
       --
       --  Regions accessible by the corresponding DMA-capable devices
@@ -77,10 +83,10 @@ package Memory_Protection is
                                   Global_Code_Region => 1,
                                   Global_ISR_Stack_Region => 2,
                                   Global_ARM_Core_MMIO_Region => 3,
-                                  Task_Private_Stack_Region => 4,
+                                  Task_Private_Stack_Data_Region => 4,
                                   Task_Private_Component_Data_Region => 5,
                                   Task_Private_Parameter_Data_Region => 6,
-                                  Task_Private_MMIO_Region => 7,
+                                  Task_Private_MMIO_Data_Region => 7,
                                   Dma_Device_ENET_Region1 => 8,
                                   Dma_Device_ENET_Region2 => 9,
                                   Unused_Region1 => 10,
@@ -114,29 +120,129 @@ package Memory_Protection is
       Stack_Region : Data_Region_Type;
       Component_Data_Region : Data_Region_Type;
       Parameter_Data_Region : Data_Region_Type;
-      MMIO_Region : Data_Region_Type;
+      MMIO_Data_Region : Data_Region_Type;
    end record;
 
-   procedure Disable_MPU;
-   --
-   --  Disable the MPU hardware
-   --
+   type Task_Data_Regions_Access_Type is access all Task_Data_Regions_Type;
 
-   function Initialized return Boolean
-      with Inline;
-   --  @private (Used only in contracts)
-
-   procedure Initialize
-      with Pre => not Initialized;
+   procedure Initialize;
    --
    --  Initializes memory protection unit
+   --
+   --  NOTE: This subprogram is called during Ada startup code, before global
+   --  package elaboration is done.
    --
 
    function Is_Valid_Data_Region (Data_Region : Data_Region_Type)
       return Boolean;
 
-   function Is_MPU_Region_In_Use (MPU_Region_Index : MPU_Region_Index_Type)
-      return Boolean;
+   --
+   --  Subprograms to be invoked only from the Ada runtime library
+   --
+
+   procedure Enable_Background_Data_Region;
+   --  with Inline;
+
+   procedure Disable_Background_Data_Region;
+   --  with Inline;
+
+   procedure Restore_Thread_MPU_Data_Regions (
+      Thread_Data_Regions : Task_Data_Regions_Type);
+   --
+   --  NOTE: This subporgram is tobe invoked only from the Ada runtime's
+   --  context switch code and with the background region enabled
+   --
+
+   procedure Save_Thread_MPU_Data_Regions (
+      Thread_Data_Regions : out Task_Data_Regions_Type);
+   --
+   --  NOTE: This subporgram is tobe invoked only from the Ada runtime's
+   --  context switch code and with the background region enabled
+   --
+
+   --
+   --  Public interfaces to be invoked from applications
+   --
+
+   procedure Enable_MPU;
+   --
+   --  This subprogram should be invoked at the beginning of the main program
+   --
+
+   procedure Set_Component_Data_Region (
+      New_Component_Data_Region : Data_Region_Type)
+      with Pre => Is_Valid_Data_Region (New_Component_Data_Region);
+      --  with Inline;
+
+   procedure Set_Component_Data_Region (
+      New_Component_Data_Region : Data_Region_Type;
+      Old_Component_Data_Region : out Data_Region_Type)
+      with Pre => Is_Valid_Data_Region (New_Component_Data_Region),
+           Post => Is_Valid_Data_Region (Old_Component_Data_Region);
+      --  with Inline;
+
+   procedure Set_Component_Data_Region (
+      Start_Address : System.Address;
+      Size_In_Bytes : Integer_Address;
+      Permissions : Data_Region_Permisions_Type;
+      Old_Component_Data_Region : out Data_Region_Type)
+      with Pre => Start_Address /= Null_Address and Size_In_Bytes > 0,
+           Post => Is_Valid_Data_Region (Old_Component_Data_Region);
+      --  with Inline;
+
+   procedure Set_Parameter_Data_Region (
+      New_Parameter_Data_Region : Data_Region_Type)
+      with Pre => Is_Valid_Data_Region (New_Parameter_Data_Region);
+      --  with Inline;
+
+   procedure Set_Parameter_Data_Region (
+      New_Parameter_Data_Region : Data_Region_Type;
+      Old_Parameter_Data_Region : out Data_Region_Type)
+      with Pre => Is_Valid_Data_Region (New_Parameter_Data_Region),
+           Post => Is_Valid_Data_Region (Old_Parameter_Data_Region);
+      --  with Inline;
+
+   procedure Set_Parameter_Data_Region (
+      Start_Address : System.Address;
+      Size_In_Bytes : Integer_Address;
+      Permissions : Data_Region_Permisions_Type;
+      Old_Parameter_Data_Region : out Data_Region_Type)
+      with Pre => Start_Address /= Null_Address and Size_In_Bytes > 0,
+           Post => Is_Valid_Data_Region (Old_Parameter_Data_Region);
+      --  with Inline;
+
+   procedure Set_Parameter_Data_Region (
+      Start_Address : System.Address;
+      Size_In_Bytes : Integer_Address;
+      Permissions : Data_Region_Permisions_Type)
+      with Pre => Start_Address /= Null_Address and Size_In_Bytes > 0;
+
+   procedure Set_MMIO_Data_Region (
+      New_MMIO_Data_Region : Data_Region_Type)
+      with Pre => Is_Valid_Data_Region (New_MMIO_Data_Region);
+      --  with Inline;
+
+   procedure Set_MMIO_Data_Region (
+      New_MMIO_Data_Region : Data_Region_Type;
+      Old_MMIO_Data_Region : out Data_Region_Type)
+      with Pre => Is_Valid_Data_Region (New_MMIO_Data_Region),
+           Post => Is_Valid_Data_Region (Old_MMIO_Data_Region);
+      --  with Inline;
+
+   procedure Set_MMIO_Data_Region (
+      Start_Address : System.Address;
+      Size_In_Bytes : Integer_Address;
+      Permissions : Data_Region_Permisions_Type)
+      with Pre => Start_Address /= Null_Address and Size_In_Bytes > 0;
+
+   procedure Set_MMIO_Data_Region (
+      Start_Address : System.Address;
+      Size_In_Bytes : Integer_Address;
+      Permissions : Data_Region_Permisions_Type;
+      Old_MMIO_Data_Region : out Data_Region_Type)
+      with Pre => Start_Address /= Null_Address and Size_In_Bytes > 0,
+           Post => Is_Valid_Data_Region (Old_MMIO_Data_Region);
+      --  with Inline;
 
    type Bus_Master_Type is (Cpu_Core0,
                             Debugger,
@@ -147,71 +253,24 @@ package Memory_Protection is
                             Dma_Device_Master6,
                             Dma_Device_Master7);
 
-   procedure Define_MPU_Data_Region (
-      Data_Region_Index : MPU_Region_Index_Type;
-      Bus_Master : Bus_Master_Type;
-      Data_Region : Data_Region_Type)
-      with Pre => Initialized
+   procedure Set_DMA_Data_Region (Data_Region_Index : MPU_Region_Index_Type;
+                                  DMA_Master : Bus_Master_Type;
+                                  Start_Address : System.Address;
+                                  Size_In_Bytes : Integer_Address;
+                                  Permissions : Data_Region_Permisions_Type)
+      with Pre => DMA_Master in Dma_Device_DMA_Engine .. Dma_Device_Master7
                   and
-                  Data_Region_Index > Global_Code_Region
-                  and
-                  not Is_MPU_Region_In_Use (Data_Region_Index)
-                  and
-                  Bus_Master /= Debugger
-                  and
-                  Is_Valid_Data_Region (Data_Region);
-   --
-   --  Defines a data region in the MPU to be accessible by the bus master
-   --  associated with the corresponding MPU region index.
-   --  The region will be accessible only by the given bus master,
-   --  unless it overlaps with other regions defined in the MPU.
-   --
+                  Start_Address /= Null_Address and Size_In_Bytes > 0;
 
-   procedure Undefine_MPU_Data_Region (
-      Data_Region_Index : MPU_Region_Index_Type)
-      with Pre => Initialized
-           and
-           Data_Region_Index > Global_Code_Region
-           and
-           Is_MPU_Region_In_Use (Data_Region_Index);
-   --
-   --  Undefines the given data region in the MPU. After this, all further
-   --  accesses to the corresponding address range will cause bus fault
-   --  exceptions.
-   --
+   function Last_Address (First_Address : System.Address;
+                          Size_In_Bits : Integer_Address) return System.Address
+   is (To_Address (To_Integer (First_Address) +
+                   (Size_In_Bits / Interfaces.Bit_Types.Byte'Size) - 1))
+   with Inline;
 
-   --
-   --  Public interfaces to be invoke dform applications
-   --
-
-   procedure Define_DMA_Data_Region (Data_Region_Index : MPU_Region_Index_Type;
-                                     DMA_Master : Bus_Master_Type;
-                                     Start_Address : System.Address;
-                                     Size_In_Bytes : Integer_Address;
-                                     Is_Read_Only : Boolean := False)
-      with Pre =>
-              Initialized
-              and
-              DMA_Master in Dma_Device_DMA_Engine .. Dma_Device_Master7;
-
-   procedure Set_Thread_MPU_Data_Regions (
-      Thread_Data_Regions : Task_Data_Regions_Type);
-
-   procedure Disable_Background_Data_Region;
-
-   procedure Enable_Background_Data_Region;
-
-   function Enter_Privileged_Mode return Boolean;
-   pragma Machine_Attribute (Enter_Privileged_Mode, "naked");
-   --
-   --  Return True if the CPU was in privilged mode before, False otherwise
-   --
-
-   procedure Exit_Privileged_Mode;
-   pragma Machine_Attribute (Enter_Privileged_Mode, "naked");
+   procedure Dump_MPU_Region_Descriptors;
 
 private
-   use Kinetis_K64F.MPU;
 
    function Is_Valid_Data_Region (Data_Region : Data_Region_Type)
       return Boolean is

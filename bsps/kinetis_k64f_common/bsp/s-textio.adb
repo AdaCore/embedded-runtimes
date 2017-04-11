@@ -31,26 +31,48 @@
 
 --  Minimal version of Text_IO body for use on Kinetis K64F
 
+pragma Restrictions (No_Elaboration_Code);
+
 with Kinetis_K64F.UART;
 with Kinetis_K64F.SIM;
 with Kinetis_K64F.PORT;
 with Interfaces.Bit_Types;
 with Microcontroller_Clocks;
+with Memory_Protection;
+with System.Storage_Elements;
 
 package body System.Text_IO is
    use Kinetis_K64F;
    use Interfaces.Bit_Types;
    use Microcontroller_Clocks;
+   use Memory_Protection;
+   use System.Storage_Elements;
 
    Baud_Rate : constant := 115_200;
    --  Bitrate to use
+
+   Initialized_Var : Boolean := False;
+
+   --  Set to True (by Initialize) when the service is initialized. Having this
+   --  variable outside allows reinitialization of the service.
 
    ---------
    -- Get --
    ---------
 
    function Get return Character is
-     (Character'Val (UART.Uart0_Registers.D));
+      Old_MMIO_Region : Data_Region_Type;
+      Result : Character;
+   begin
+      Set_MMIO_Data_Region (UART.Uart0_Registers'Address,
+                            UART.Uart0_Registers'Size / Byte'Size,
+                            Read_Only,
+                            Old_MMIO_Region);
+
+      Result := Character'Val (UART.Uart0_Registers.D);
+      Set_MMIO_Data_Region (Old_MMIO_Region);
+      return Result;
+   end Get;
 
    ----------------
    -- Initialize --
@@ -62,9 +84,20 @@ package body System.Text_IO is
       Calculated_SBR : Positive range 1 .. 16#1FFF#;
       Encoded_Baud_Rate : UART.Encoded_Baud_Rate_Type with
         Address => Calculated_SBR'Address;
+      Old_MMIO_Region : Data_Region_Type;
+      Old_Component_Region : Data_Region_Type;
    begin
+      Set_MMIO_Data_Region (SIM.Registers'Address,
+                            SIM.Registers'Size / Byte'Size,
+                            Read_Write,
+                            Old_MMIO_Region);
+
       --  Enable UART clock
       SIM.Registers.SCGC4.UART0 := 1;
+
+      Set_MMIO_Data_Region (UART.Uart0_Registers'Address,
+                            UART.Uart0_Registers'Size / Byte'Size,
+                            Read_Write);
 
       --  Disable UART's transmitter and receiver, while UART is being
       --  configured:
@@ -87,6 +120,10 @@ package body System.Text_IO is
 
       UART.Uart0_Registers.CFIFO := (RXFLUSH => 1, TXFLUSH => 1, others => 0);
 
+      Set_MMIO_Data_Region (PORT.PortB_Registers'Address,
+                            PORT.PortB_Registers'Size / Byte'Size,
+                            Read_Write);
+
       --  Configure Tx pin:
       PORT.PortB_Registers.PCR (17) := (MUX => 3, DSE => 1, IRQC => 0,
                                         others => 0);
@@ -94,6 +131,10 @@ package body System.Text_IO is
       --  Configure Rx pin:
       PORT.PortB_Registers.PCR (16) := (MUX => 3, DSE => 1, IRQC => 0,
                                         others => 0);
+
+      Set_MMIO_Data_Region (UART.Uart0_Registers'Address,
+                            UART.Uart0_Registers'Size / Byte'Size,
+                            Read_Write);
 
       --  Set Baud Rate;
       Calculated_SBR :=
@@ -113,31 +154,81 @@ package body System.Text_IO is
       C2_Value.RE := 1;
       UART.Uart0_Registers.C2 := C2_Value;
 
-      Initialized := True;
+      Set_Component_Data_Region (Initialized'Address,
+                                 Initialized'Size / Byte'Size,
+                                 Read_Write,
+                                 Old_Component_Region);
 
+      Initialized_Var := True;
+
+      Set_Component_Data_Region (Old_Component_Region);
+      Set_MMIO_Data_Region (Old_MMIO_Region);
    end Initialize;
+
+   function Initialized return Boolean
+   is
+      Old_Component_Region : Data_Region_Type;
+      Result : Boolean;
+   begin
+      Set_Component_Data_Region (Initialized_Var'Address,
+                                 Initialized_Var'Size / Byte'Size,
+                                 Read_Only,
+                                 Old_Component_Region);
+      Result := Initialized_Var;
+
+      Set_Component_Data_Region (Old_Component_Region);
+      return Result;
+   end Initialized;
 
    -----------------
    -- Is_Tx_Ready --
    -----------------
 
    function Is_Tx_Ready return Boolean is
-     (UART.Uart0_Registers.S1.TDRE = 1);
+      Result : Boolean;
+      Old_MMIO_Region : Data_Region_Type;
+   begin
+      Set_MMIO_Data_Region (UART.Uart0_Registers'Address,
+                            UART.Uart0_Registers'Size / Byte'Size,
+                            Read_Only,
+                            Old_MMIO_Region);
+      Result := UART.Uart0_Registers.S1.TDRE = 1;
+      Set_MMIO_Data_Region (Old_MMIO_Region);
+      return Result;
+   end Is_Tx_Ready;
 
    -----------------
    -- Is_Rx_Ready --
    -----------------
 
    function Is_Rx_Ready return Boolean is
-     (UART.Uart0_Registers.S1.RDRF = 1);
+      Result : Boolean;
+      Old_MMIO_Region : Data_Region_Type;
+   begin
+      Set_MMIO_Data_Region (UART.Uart0_Registers'Address,
+                            UART.Uart0_Registers'Size / Byte'Size,
+                            Read_Only,
+                            Old_MMIO_Region);
+      Result := UART.Uart0_Registers.S1.RDRF = 1;
+      Set_MMIO_Data_Region (Old_MMIO_Region);
+      return Result;
+   end Is_Rx_Ready;
 
    ---------
    -- Put --
    ---------
 
    procedure Put (C : Character) is
+      Old_MMIO_Region : Data_Region_Type;
    begin
+      Set_MMIO_Data_Region (UART.Uart0_Registers'Address,
+                            UART.Uart0_Registers'Size / Byte'Size,
+                            Read_Write,
+                            Old_MMIO_Region);
+
       UART.Uart0_Registers.D := Byte (Character'Pos (C));
+
+      Set_MMIO_Data_Region (Old_MMIO_Region);
    end Put;
 
    ----------------------------

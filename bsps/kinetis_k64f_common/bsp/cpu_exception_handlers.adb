@@ -30,6 +30,7 @@ with System.BB.CPU_Primitives;
 with Interfaces;
 with System.Machine_Code;
 with System.Storage_Elements;
+with Memory_Protection;
 
 package body Cpu_Exception_Handlers is
    use Interfaces;
@@ -62,6 +63,7 @@ package body Cpu_Exception_Handlers is
       use System.Storage_Elements;
    begin
       System.BB.CPU_Primitives.Disable_Interrupts;
+      Memory_Protection.Enable_Background_Data_Region;
       System.Text_IO.Extended.Put_String (ASCII.LF & Msg & ASCII.LF);
 
       if Return_Address = 16#FFFFFFFD# or else

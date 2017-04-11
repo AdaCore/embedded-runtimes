@@ -31,8 +31,8 @@ with System.Text_IO; use System.Text_IO;
 separate (GNAT.IO)
 procedure Put (C : Character) is
 begin
-   if not Initialized then
-      Initialize;
+   if not System.Text_IO.Initialized then
+      System.Text_IO.Initialize;
    end if;
 
    --  GNAT.IO calls Put (ASCII.LF) for New_Line. Compensate.

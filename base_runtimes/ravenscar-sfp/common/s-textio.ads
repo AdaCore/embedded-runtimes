@@ -38,9 +38,7 @@ package System.Text_IO is
    --  Must be called before all other subprograms to initialize the service.
    --  We avoid the use of elaboration to make this package preelaborated.
 
-   Initialized : Boolean := False;
-   --  Set to True (by Initialize) when the service is initialized. Having this
-   --  variable outside allows reinitialization of the service.
+   function Initialized return Boolean;
 
    --------------
    --  Output  --
