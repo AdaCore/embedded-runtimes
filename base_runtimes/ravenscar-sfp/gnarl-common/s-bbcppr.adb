@@ -304,7 +304,10 @@ package body System.BB.CPU_Primitives is
    ----------------------------------
 
    procedure Interrupt_Request_Handler is
+      Active_Priority : Integer;
    begin
+      Memory_Protection.Enable_Background_Data_Region;
+
       --  Call the handler (System.BB.Interrupts.Interrupt_Wrapper)
 
       Trap_Handlers (Interrupt_Request_Vector)(Interrupt_Request_Vector);
@@ -328,9 +331,12 @@ package body System.BB.CPU_Primitives is
          Context_Switch;
       end if;
 
+      Active_Priority := Running_Thread.Active_Priority;
+      Memory_Protection.Disable_Background_Data_Region;
+
       --  Restore interrupt masking of interrupted thread
 
-      Enable_Interrupts (Running_Thread.Active_Priority);
+      Enable_Interrupts (Active_Priority);
    end Interrupt_Request_Handler;
 
    ---------------------
@@ -522,10 +528,15 @@ package body System.BB.CPU_Primitives is
    ----------------------
 
    procedure Sys_Tick_Handler is
-      Max_Alarm_Interval : constant Timer_Interval := Timer_Interval'Last / 2;
-      Now : constant Timer_Interval := Read_Clock;
-
+      Active_Priority : Integer;
+      Max_Alarm_Interval : Timer_Interval;
+      Now : Timer_Interval;
    begin
+      Memory_Protection.Enable_Background_Data_Region;
+
+      Max_Alarm_Interval := Timer_Interval'Last / 2;
+      Now := Read_Clock;
+
       --  The following allows max. efficiency for "useless" tick interrupts
 
       if Alarm_Time - Now <= Max_Alarm_Interval then
@@ -547,7 +558,10 @@ package body System.BB.CPU_Primitives is
          Context_Switch;
       end if;
 
-      Enable_Interrupts (Running_Thread.Active_Priority);
+      Active_Priority := Running_Thread.Active_Priority;
+      Memory_Protection.Disable_Background_Data_Region;
+
+      Enable_Interrupts (Active_Priority);
    end Sys_Tick_Handler;
 
    ------------------------

@@ -27,7 +27,6 @@
 --  Version for use with zero foot print run time
 
 with System.Text_IO; use System.Text_IO;
-with Memory_Protection; use Memory_Protection;
 
 package body Ada.Text_IO is
 
@@ -71,16 +70,10 @@ package body Ada.Text_IO is
    end Put;
 
    procedure Put (Item : String) is
-      Old_Parameter_Region : Data_Region_Type;
    begin
-      Set_Parameter_Data_Region (Item'Address, Item'Length, Read_Only,
-                                 Old_Parameter_Region);
-
       for J in Item'Range loop
          Put (Item (J));
       end loop;
-
-      Set_Parameter_Data_Region (Old_Parameter_Region);
    end Put;
 
    --------------

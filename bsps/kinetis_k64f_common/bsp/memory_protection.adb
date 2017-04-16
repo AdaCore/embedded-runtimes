@@ -25,10 +25,14 @@
 --  POSSIBILITY OF SUCH DAMAGE.
 --
 
+--
+--  I dedicate this module to Luzmila
+--
+
 with System.BB.Parameters;
 with System.Machine_Code;
 with Kinetis_K64F.MPU;
-with System.Text_IO.Extended; --  ???
+with System.Text_IO.Extended;
 
 package body Memory_Protection is
    use Interfaces.Bit_Types;
@@ -398,7 +402,7 @@ package body Memory_Protection is
          --
          RGDAAC_Value := MPU_Registers.RGDAAC (Background_Region'Enum_Rep);
          RGDAAC_Value.Bus_Master_CPU_Core_Perms.User_Mode_Permissions :=
-            (Read_Allowed => 1, Write_Allowed => 0, Execute_Allowed => 0); -- ?
+            (Read_Allowed => 0, Write_Allowed => 0, Execute_Allowed => 0); -- ?
          MPU_Registers.RGDAAC (Background_Region'Enum_Rep) := RGDAAC_Value;
          System.Machine_Code.Asm ("isb", Volatile => True);
       end if;
@@ -578,7 +582,7 @@ package body Memory_Protection is
 
          --
          --  Set region for ARM Core control registers:
-         --
+         --  ???
          Define_Mpu_Region (
             Global_ARM_Core_MMIO_Region,
             Cpu_Core0,
