@@ -60,8 +60,7 @@ package body Memory_Protection is
    type Memory_Protection_Type is record
       Initialized : Boolean := False;
       Num_Regions : Natural := 0;
-      Enable_Background_Data_Region_Count : Unsigned_32 := 0
-         with Atomic, Volatile;
+      Enable_Background_Data_Region_Count : Unsigned_32 := 0 with Volatile;
    end record;
 
    Memory_Protection_Var : Memory_Protection_Type;
@@ -90,6 +89,12 @@ package body Memory_Protection is
    --  End address of the main stack (for ISRs)
    Main_Stack_End : constant Unsigned_32;
    pragma Import (Asm, Main_Stack_End, "__stack_end");
+
+   Interrupt_Vector_Table_Start : constant Unsigned_32;
+   pragma Import (Asm, Interrupt_Vector_Table_Start, "__vectors");
+
+   Interrupt_Vector_Table_End : constant Unsigned_32;
+   pragma Import (Asm, Interrupt_Vector_Table_End, "__vectors_end");
 
    function Round_Down (Value : Integer_Address;
                         Alignment : Integer_Address)
@@ -384,6 +389,7 @@ package body Memory_Protection is
       pragma Assert (Memory_Protection_Var.Initialized);
 
       Old_Intr_Mask := Disable_Cpu_Interrupts;
+
       pragma Assert (Memory_Protection_Var.Initialized);
       pragma Assert (
          Memory_Protection_Var.Enable_Background_Data_Region_Count > 0);
@@ -402,7 +408,7 @@ package body Memory_Protection is
          --
          RGDAAC_Value := MPU_Registers.RGDAAC (Background_Region'Enum_Rep);
          RGDAAC_Value.Bus_Master_CPU_Core_Perms.User_Mode_Permissions :=
-            (Read_Allowed => 0, Write_Allowed => 0, Execute_Allowed => 0); -- ?
+            (Read_Allowed => 0, Write_Allowed => 0, Execute_Allowed => 0);
          MPU_Registers.RGDAAC (Background_Region'Enum_Rep) := RGDAAC_Value;
          System.Machine_Code.Asm ("isb", Volatile => True);
       end if;
@@ -431,7 +437,20 @@ package body Memory_Protection is
    ---------------------------------
 
    procedure Dump_MPU_Region_Descriptors is
+      Count : Unsigned_32; -- ???
    begin
+      --  ???
+      Count := Memory_Protection_Var.Enable_Background_Data_Region_Count;
+      System.Text_IO.Extended.Put_String ("*** Count " & Count'Image &
+         ASCII.LF);
+      Count := Memory_Protection_Var.Enable_Background_Data_Region_Count;
+      System.Text_IO.Extended.Put_String ("*** Count " & Count'Image &
+         ASCII.LF);
+      Count := Memory_Protection_Var.Enable_Background_Data_Region_Count;
+      System.Text_IO.Extended.Put_String ("*** Count " & Count'Image &
+         ASCII.LF);
+      --  ???
+
       for I in Region_Index_Type loop
          declare
             Word0_Val : Unsigned_32 with Address =>
@@ -454,6 +473,13 @@ package body Memory_Protection is
                "RGDAAC=" & RGDAAC_Val'Image & ASCII.LF);
          end;
       end loop;
+
+      --  ???
+      Count := Memory_Protection_Var.Enable_Background_Data_Region_Count;
+      System.Text_IO.Extended.Put_String ("*** Count " & Count'Image &
+         ASCII.LF);
+      --  ???
+
    end Dump_MPU_Region_Descriptors;
 
    -----------------------------------
@@ -518,13 +544,17 @@ package body Memory_Protection is
                                     Read_Allowed => 1),
           others => <>);
 
+      Type1_Read_Only_Permissions : constant Bus_Master_Permissions_Type1 :=
+         (User_Mode_Permissions => (Execute_Allowed => 0,
+                                    Write_Allowed => 0,
+                                    Read_Allowed => 1),
+          others => <>);
+
       CESR_Value : CESR_Register_Type;
       WORD2_Value : WORD2_Register_Type;
       WORD3_Value : WORD3_Register_Type;
       Dummy_Type2_Permissions : Bus_Master_Permissions_Type2;
    begin
-      pragma Assert (not Memory_Protection_Var.Initialized);
-
       if System.BB.Parameters.Use_MPU then
          --
          --  Verify that the MPU has enough regions:
@@ -581,37 +611,21 @@ package body Memory_Protection is
             Dummy_Type2_Permissions);
 
          --
-         --  Set region for ARM Core control registers:
-         --  ???
+         --  Set MPU region for relocated interrupt vector in RAM stack:
+         --
          Define_Mpu_Region (
-            Global_ARM_Core_MMIO_Region,
+            Global_Interrupt_Vector_Table_Region,
             Cpu_Core0,
-            To_Address (Integer_Address (16#E000_0000#)),
-            To_Address (Integer_Address (16#E00F_FFFF#)),
-            Type1_Read_Write_Permissions,
+            To_Address (To_Integer (Interrupt_Vector_Table_Start'Address)),
+            To_Address (To_Integer (Interrupt_Vector_Table_End'Address) - 1),
+            Type1_Read_Only_Permissions,
             Dummy_Type2_Permissions);
-
-         --  ???
-         --  Define_Mpu_Region (
-         --     Task_Private_Component_Data_Region,
-         --     Cpu_Core0,
-         --     To_Address (Integer_Address (16#1FFF_0000#)),
-         --     To_Address (Integer_Address (16#2002_FFFF#)),
-         --     Type1_Read_Write_Permissions,
-         --     Dummy_Type2_Permissions);
-
-         --  Define_Mpu_Region (
-         --   Task_Private_MMIO_Data_Region,
-         --   Cpu_Core0,
-         --   To_Address (Integer_Address (16#4000_0000#)),
-         --   To_Address (Integer_Address (16#400F_FFFF#)),
-         --   Type1_Read_Write_Permissions,
-         --   Dummy_Type2_Permissions);
 
          --
          --  Disable access to the background region for all  masters
          --
          MPU_Registers.RGDAAC (Background_Region'Enum_Rep) := (others => <>);
+         Memory_Protection_Var.Enable_Background_Data_Region_Count := 0;
 
          --
          --  NOTE: Leave the MPU disabled, so that the Ada runtime startup code
@@ -705,27 +719,14 @@ package body Memory_Protection is
             Data_Region_Index => Task_Private_Component_Data_Region);
       end if;
 
-      if Thread_Data_Regions.
-            Parameter_Data_Region.Permissions /= None
-      then
+      if Thread_Data_Regions.Temp_Data_Region.Permissions /= None then
          Define_MPU_Data_Region (
-           Data_Region_Index => Task_Private_Parameter_Data_Region,
+           Data_Region_Index => Task_Private_Temp_Data_Region,
            Bus_Master => Cpu_Core0,
-           Data_Region => Thread_Data_Regions.Parameter_Data_Region);
+           Data_Region => Thread_Data_Regions.Temp_Data_Region);
       else
          Undefine_MPU_Data_Region (
-            Data_Region_Index => Task_Private_Parameter_Data_Region);
-      end if;
-
-      if Thread_Data_Regions.MMIO_Data_Region.Permissions /= None
-      then
-         Define_MPU_Data_Region (
-           Data_Region_Index => Task_Private_MMIO_Data_Region,
-           Bus_Master => Cpu_Core0,
-           Data_Region => Thread_Data_Regions.MMIO_Data_Region);
-      else
-         Undefine_MPU_Data_Region (
-           Data_Region_Index => Task_Private_MMIO_Data_Region);
+            Data_Region_Index => Task_Private_Temp_Data_Region);
       end if;
 
       System.Machine_Code.Asm ("isb", Volatile => True);
@@ -813,14 +814,9 @@ package body Memory_Protection is
          Data_Region => Thread_Data_Regions.Component_Data_Region);
 
       Save_MPU_Data_Region (
-         Data_Region_Index => Task_Private_Parameter_Data_Region,
+         Data_Region_Index => Task_Private_Temp_Data_Region,
          Bus_Master => Cpu_Core0,
-         Data_Region => Thread_Data_Regions.Parameter_Data_Region);
-
-      Save_MPU_Data_Region (
-         Data_Region_Index => Task_Private_MMIO_Data_Region,
-         Bus_Master => Cpu_Core0,
-         Data_Region => Thread_Data_Regions.MMIO_Data_Region);
+         Data_Region => Thread_Data_Regions.Temp_Data_Region);
    end Save_Thread_MPU_Data_Regions;
 
    -------------------------------
@@ -922,12 +918,11 @@ package body Memory_Protection is
    end Set_DMA_Data_Region;
 
    --------------------------
-   -- Set_MMIO_Data_Region --
+   -- Set_Temp_Data_Region --
    --------------------------
 
-   procedure Set_MMIO_Data_Region (
-      New_MMIO_Data_Region : Data_Region_Type)
-   is
+   procedure Set_Temp_Data_Region (
+      New_Temp_Data_Region : Data_Region_Type) is
    begin
       if not System.BB.Parameters.Use_MPU then
          return;
@@ -936,89 +931,29 @@ package body Memory_Protection is
       Enable_Background_Data_Region;
 
       Define_MPU_Data_Region (
-         Data_Region_Index => Task_Private_MMIO_Data_Region,
+         Data_Region_Index => Task_Private_Temp_Data_Region,
          Bus_Master => Cpu_Core0,
-         Data_Region => New_MMIO_Data_Region);
+         Data_Region => New_Temp_Data_Region);
 
       Disable_Background_Data_Region;
-   end Set_MMIO_Data_Region;
+   end Set_Temp_Data_Region;
 
    --------------------------
-   -- Set_MMIO_Data_Region --
+   -- Set_Temp_Data_Region --
    --------------------------
 
-   procedure Set_MMIO_Data_Region (
-      New_MMIO_Data_Region : Data_Region_Type;
-      Old_MMIO_Data_Region : out Data_Region_Type)
-   is
-   begin
-      if not System.BB.Parameters.Use_MPU then
-         return;
-      end if;
-
-      Enable_Background_Data_Region;
-
-      Save_MPU_Data_Region (
-         Data_Region_Index => Task_Private_MMIO_Data_Region,
-         Bus_Master => Cpu_Core0,
-         Data_Region => Old_MMIO_Data_Region);
-
-      Define_MPU_Data_Region (
-           Data_Region_Index => Task_Private_MMIO_Data_Region,
-           Bus_Master => Cpu_Core0,
-           Data_Region => New_MMIO_Data_Region);
-
-      Disable_Background_Data_Region;
-   end Set_MMIO_Data_Region;
-
-   --------------------------
-   -- Set_MMIO_Data_Region --
-   --------------------------
-
-   procedure Set_MMIO_Data_Region (
+   procedure Set_Temp_Data_Region (
       Start_Address : System.Address;
       Size_In_Bytes : Integer_Address;
       Permissions : Data_Region_Permisions_Type)
    is
-      New_MMIO_Data_Region : constant Data_Region_Type :=
+      New_Temp_Data_Region : constant Data_Region_Type :=
          (First_Address => Round_Down_Address (Start_Address,
                                                MPU_Region_Alignment),
           Last_Address => To_Address (Round_Up (To_Integer (Start_Address) +
                                                 Size_In_Bytes,
                                                 MPU_Region_Alignment) - 1),
           Permissions => Permissions);
-   begin
-      Set_MMIO_Data_Region (New_MMIO_Data_Region);
-   end Set_MMIO_Data_Region;
-
-   --------------------------
-   -- Set_MMIO_Data_Region --
-   --------------------------
-
-   procedure Set_MMIO_Data_Region (
-      Start_Address : System.Address;
-      Size_In_Bytes : Integer_Address;
-      Permissions : Data_Region_Permisions_Type;
-      Old_MMIO_Data_Region : out Data_Region_Type)
-   is
-      New_MMIO_Data_Region : constant Data_Region_Type :=
-         (First_Address => Round_Down_Address (Start_Address,
-                                               MPU_Region_Alignment),
-          Last_Address => To_Address (Round_Up (To_Integer (Start_Address) +
-                                                Size_In_Bytes,
-                                                MPU_Region_Alignment) - 1),
-          Permissions => Permissions);
-   begin
-      Set_MMIO_Data_Region (New_MMIO_Data_Region,
-                            Old_MMIO_Data_Region);
-   end Set_MMIO_Data_Region;
-
-   -------------------------------
-   -- Set_Parameter_Data_Region --
-   -------------------------------
-
-   procedure Set_Parameter_Data_Region (
-      New_Parameter_Data_Region : Data_Region_Type) is
    begin
       if not System.BB.Parameters.Use_MPU then
          return;
@@ -1027,108 +962,12 @@ package body Memory_Protection is
       Enable_Background_Data_Region;
 
       Define_MPU_Data_Region (
-         Data_Region_Index => Task_Private_Parameter_Data_Region,
-         Bus_Master => Cpu_Core0,
-         Data_Region => New_Parameter_Data_Region);
-
-      Disable_Background_Data_Region;
-   end Set_Parameter_Data_Region;
-
-   -------------------------------
-   -- Set_Parameter_Data_Region --
-   -------------------------------
-
-   procedure Set_Parameter_Data_Region (
-      New_Parameter_Data_Region : Data_Region_Type;
-      Old_Parameter_Data_Region : out Data_Region_Type)
-   is
-   begin
-      if not System.BB.Parameters.Use_MPU then
-         return;
-      end if;
-
-      Enable_Background_Data_Region;
-
-      Save_MPU_Data_Region (
-         Data_Region_Index => Task_Private_Parameter_Data_Region,
-         Bus_Master => Cpu_Core0,
-         Data_Region => Old_Parameter_Data_Region);
-
-      Define_MPU_Data_Region (
-           Data_Region_Index => Task_Private_Parameter_Data_Region,
+           Data_Region_Index => Task_Private_Temp_Data_Region,
            Bus_Master => Cpu_Core0,
-           Data_Region => New_Parameter_Data_Region);
+           Data_Region => New_Temp_Data_Region);
 
       Disable_Background_Data_Region;
-   end Set_Parameter_Data_Region;
-
-   -------------------------------
-   -- Set_Parameter_Data_Region --
-   -------------------------------
-
-   procedure Set_Parameter_Data_Region (
-      Start_Address : System.Address;
-      Size_In_Bytes : Integer_Address;
-      Permissions : Data_Region_Permisions_Type;
-      Old_Parameter_Data_Region : out Data_Region_Type)
-   is
-      New_Parameter_Data_Region : constant Data_Region_Type :=
-         (First_Address => Round_Down_Address (Start_Address,
-                                               MPU_Region_Alignment),
-          Last_Address => To_Address (Round_Up (To_Integer (Start_Address) +
-                                                Size_In_Bytes,
-                                                MPU_Region_Alignment) - 1),
-          Permissions => Permissions);
-   begin
-      if not System.BB.Parameters.Use_MPU then
-         return;
-      end if;
-
-      Enable_Background_Data_Region;
-
-      Save_MPU_Data_Region (
-         Data_Region_Index => Task_Private_Parameter_Data_Region,
-         Bus_Master => Cpu_Core0,
-         Data_Region => Old_Parameter_Data_Region);
-
-      Define_MPU_Data_Region (
-           Data_Region_Index => Task_Private_Parameter_Data_Region,
-           Bus_Master => Cpu_Core0,
-           Data_Region => New_Parameter_Data_Region);
-
-      Disable_Background_Data_Region;
-   end Set_Parameter_Data_Region;
-
-   -------------------------------
-   -- Set_Parameter_Data_Region --
-   -------------------------------
-
-   procedure Set_Parameter_Data_Region (
-      Start_Address : System.Address;
-      Size_In_Bytes : Integer_Address;
-      Permissions : Data_Region_Permisions_Type)
-   is
-      New_Parameter_Data_Region : constant Data_Region_Type :=
-         (First_Address => Round_Down_Address (Start_Address,
-                                               MPU_Region_Alignment),
-          Last_Address => To_Address (Round_Up (To_Integer (Start_Address) +
-                                                Size_In_Bytes,
-                                                MPU_Region_Alignment) - 1),
-          Permissions => Permissions);
-   begin
-      if not System.BB.Parameters.Use_MPU then
-         return;
-      end if;
-
-      Enable_Background_Data_Region;
-
-      Define_MPU_Data_Region (
-           Data_Region_Index => Task_Private_Parameter_Data_Region,
-           Bus_Master => Cpu_Core0,
-           Data_Region => New_Parameter_Data_Region);
-
-      Disable_Background_Data_Region;
-   end Set_Parameter_Data_Region;
+   end Set_Temp_Data_Region;
 
    ------------------------------
    -- Undefine_MPU_Data_Region --
@@ -1146,5 +985,14 @@ package body Memory_Protection is
       MPU_Registers.Region_Descriptors (Region_Index).WORD3 :=
          (VLD => 0, others => <>);
    end Undefine_MPU_Data_Region;
+
+   ----------------------------
+   -- Unset_Temp_Data_Region --
+   ----------------------------
+
+   procedure Unset_Temp_Data_Region is
+   begin
+      Undefine_MPU_Data_Region (Task_Private_Temp_Data_Region);
+   end Unset_Temp_Data_Region;
 
 end Memory_Protection;

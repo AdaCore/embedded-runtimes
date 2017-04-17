@@ -150,6 +150,9 @@ __vectors:
         .word   __gnat_irq_trap      /* 100 IRQ84.  */
         .word   __gnat_irq_trap      /* 101 IRQ85.  */
 
+	.globl	__vectors_end
+__vectors_end:
+
 	.text
 
 .weak __gnat_irq_trap

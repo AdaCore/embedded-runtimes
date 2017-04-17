@@ -60,11 +60,10 @@ package Memory_Protection is
       Background_Region,
       Global_Code_Region,
       Global_ISR_Stack_Region,
-      Global_ARM_Core_MMIO_Region,
+      Global_Interrupt_Vector_Table_Region,
       Task_Private_Stack_Data_Region,
       Task_Private_Component_Data_Region,
-      Task_Private_Parameter_Data_Region,
-      Task_Private_MMIO_Data_Region,
+      Task_Private_Temp_Data_Region,
 
       --
       --  Regions accessible by the corresponding DMA-capable devices
@@ -77,20 +76,21 @@ package Memory_Protection is
       --  Unused region descriptors
       --
       Unused_Region1,
-      Unused_Region2);
+      Unused_Region2,
+      Unused_Region3);
 
    for MPU_Region_Index_Type use (Background_Region => 0,
                                   Global_Code_Region => 1,
                                   Global_ISR_Stack_Region => 2,
-                                  Global_ARM_Core_MMIO_Region => 3,
+                                  Global_Interrupt_Vector_Table_Region => 3,
                                   Task_Private_Stack_Data_Region => 4,
                                   Task_Private_Component_Data_Region => 5,
-                                  Task_Private_Parameter_Data_Region => 6,
-                                  Task_Private_MMIO_Data_Region => 7,
-                                  Dma_Device_ENET_Region1 => 8,
-                                  Dma_Device_ENET_Region2 => 9,
-                                  Unused_Region1 => 10,
-                                  Unused_Region2 => 11);
+                                  Task_Private_Temp_Data_Region => 6,
+                                  Dma_Device_ENET_Region1 => 7,
+                                  Dma_Device_ENET_Region2 => 8,
+                                  Unused_Region1 => 9,
+                                  Unused_Region2 => 10,
+                                  Unused_Region3 => 11);
 
    type Data_Region_Permisions_Type is (None,
                                         Read_Only,
@@ -111,16 +111,15 @@ package Memory_Protection is
    --  @field Stack_Region MPU region for the task's stack
    --  @field Component_Data_Region MPU region for global data of current
    --  component called by the task
-   --  @field Parameter_Data_Region MPU region to access input
-   --  or output paramters passed by reference and that are not in the current
-   --  component's data region nor in the current task's stack.
-   --  @field MMIO_Region : MPU region to access MMIO registers
+   --  @field Temp_Data_Region MPU region to for temporary access to non-
+   --  component data, such as input or output paramters passed by reference
+   --  and that are not in the current component's data region nor in the
+   --  current task's stack. It can also be aused for accessing MMIO registers.
    --
    type Task_Data_Regions_Type is limited record
       Stack_Region : Data_Region_Type;
       Component_Data_Region : Data_Region_Type;
-      Parameter_Data_Region : Data_Region_Type;
-      MMIO_Data_Region : Data_Region_Type;
+      Temp_Data_Region : Data_Region_Type;
    end record;
 
    type Task_Data_Regions_Access_Type is access all Task_Data_Regions_Type;
@@ -190,59 +189,18 @@ package Memory_Protection is
            Post => Is_Valid_Data_Region (Old_Component_Data_Region);
       --  with Inline;
 
-   procedure Set_Parameter_Data_Region (
-      New_Parameter_Data_Region : Data_Region_Type)
-      with Pre => Is_Valid_Data_Region (New_Parameter_Data_Region);
+   procedure Set_Temp_Data_Region (
+      New_Temp_Data_Region : Data_Region_Type)
+      with Pre => Is_Valid_Data_Region (New_Temp_Data_Region);
       --  with Inline;
 
-   procedure Set_Parameter_Data_Region (
-      New_Parameter_Data_Region : Data_Region_Type;
-      Old_Parameter_Data_Region : out Data_Region_Type)
-      with Pre => Is_Valid_Data_Region (New_Parameter_Data_Region),
-           Post => Is_Valid_Data_Region (Old_Parameter_Data_Region);
-      --  with Inline;
-
-   procedure Set_Parameter_Data_Region (
-      Start_Address : System.Address;
-      Size_In_Bytes : Integer_Address;
-      Permissions : Data_Region_Permisions_Type;
-      Old_Parameter_Data_Region : out Data_Region_Type)
-      with Pre => Start_Address /= Null_Address and Size_In_Bytes > 0,
-           Post => Is_Valid_Data_Region (Old_Parameter_Data_Region);
-      --  with Inline;
-
-   procedure Set_Parameter_Data_Region (
+   procedure Set_Temp_Data_Region (
       Start_Address : System.Address;
       Size_In_Bytes : Integer_Address;
       Permissions : Data_Region_Permisions_Type)
       with Pre => Start_Address /= Null_Address and Size_In_Bytes > 0;
 
-   procedure Set_MMIO_Data_Region (
-      New_MMIO_Data_Region : Data_Region_Type)
-      with Pre => Is_Valid_Data_Region (New_MMIO_Data_Region);
-      --  with Inline;
-
-   procedure Set_MMIO_Data_Region (
-      New_MMIO_Data_Region : Data_Region_Type;
-      Old_MMIO_Data_Region : out Data_Region_Type)
-      with Pre => Is_Valid_Data_Region (New_MMIO_Data_Region),
-           Post => Is_Valid_Data_Region (Old_MMIO_Data_Region);
-      --  with Inline;
-
-   procedure Set_MMIO_Data_Region (
-      Start_Address : System.Address;
-      Size_In_Bytes : Integer_Address;
-      Permissions : Data_Region_Permisions_Type)
-      with Pre => Start_Address /= Null_Address and Size_In_Bytes > 0;
-
-   procedure Set_MMIO_Data_Region (
-      Start_Address : System.Address;
-      Size_In_Bytes : Integer_Address;
-      Permissions : Data_Region_Permisions_Type;
-      Old_MMIO_Data_Region : out Data_Region_Type)
-      with Pre => Start_Address /= Null_Address and Size_In_Bytes > 0,
-           Post => Is_Valid_Data_Region (Old_MMIO_Data_Region);
-      --  with Inline;
+   procedure Unset_Temp_Data_Region;
 
    type Bus_Master_Type is (Cpu_Core0,
                             Debugger,

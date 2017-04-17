@@ -309,6 +309,7 @@ package body System.BB.CPU_Primitives is
       Memory_Protection.Enable_Background_Data_Region;
 
       --  Call the handler (System.BB.Interrupts.Interrupt_Wrapper)
+      --  TODO: Don't leave background region enabled while calling ISRs
 
       Trap_Handlers (Interrupt_Request_Vector)(Interrupt_Request_Vector);
 
@@ -542,7 +543,7 @@ package body System.BB.CPU_Primitives is
       if Alarm_Time - Now <= Max_Alarm_Interval then
 
          --  Alarm is still in the future, nothing to do, so return quickly
-
+         Memory_Protection.Disable_Background_Data_Region;
          return;
       end if;
 
@@ -560,7 +561,6 @@ package body System.BB.CPU_Primitives is
 
       Active_Priority := Running_Thread.Active_Priority;
       Memory_Protection.Disable_Background_Data_Region;
-
       Enable_Interrupts (Active_Priority);
    end Sys_Tick_Handler;
 

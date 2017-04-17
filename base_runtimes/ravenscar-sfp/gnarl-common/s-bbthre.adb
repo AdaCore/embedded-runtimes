@@ -209,24 +209,6 @@ package body System.BB.Threads is
         (First_Address => Id.Bottom_Of_Stack,
          Last_Address => To_Address (To_Integer (Id.Top_Of_Stack) - 1),
          Permissions => Memory_Protection.Read_Write);
-      --  ???
-      --  System.Text_IO.Extended.Put_String ("*** Stack " &
-      --                                To_Integer (Id.Bottom_Of_Stack)'Image &
-      --                                To_Integer (Id.Top_Of_Stack)'Image &
-      --                                ASCII.LF);
-      --  ???
-      --  Id.Thread_Data_Regions.Component_Data_Region :=
-      --   (First_Address => To_Address (Integer_Address (16#1FFF0000#)),
-      --    Last_Address => To_Address (Integer_Address (16#2002FFFF#)),
-      --    Permissions => Memory_Protection.Read_Write);
-
-      --  Id.Thread_Data_Regions.MMIO_Data_Region :=
-      --     (First_Address => To_Address (Integer_Address (16#40000000#)),
-      --      Last_Address => To_Address (Integer_Address (16#400FFFFF#)),
-      --      Permissions => Memory_Protection.Read_Write);
-      --  ???
-      --  TODO: Also need to set region for secondary stack???
-
    end Initialize_Thread;
 
    ----------------
