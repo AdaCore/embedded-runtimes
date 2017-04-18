@@ -35,6 +35,7 @@ with System.BB.Threads;
 with System.BB.Threads.Queues;
 with System.BB.Time;
 with System.Machine_Code; use System.Machine_Code;
+with Memory_Protection;
 
 package body System.BB.CPU_Primitives is
    use Parameters;
@@ -113,6 +114,14 @@ package body System.BB.CPU_Primitives is
    procedure GNAT_Error_Handler (Trap : Vector_Id);
    pragma No_Return (GNAT_Error_Handler);
 
+   procedure Restore_Thread_MPU_Data_Regions;
+   pragma Export (Asm, Restore_Thread_MPU_Data_Regions,
+                  "__restore_thread_mpu_data_regions");
+
+   procedure Save_Thread_MPU_Data_Regions;
+   pragma Export (Asm, Save_Thread_MPU_Data_Regions,
+                  "__save_thread_mpu_data_regions");
+
    -----------------------
    -- Context Switching --
    -----------------------
@@ -129,6 +138,7 @@ package body System.BB.CPU_Primitives is
    --  R4 .. R11 are at offset 0 .. 7
 
    SP_process : constant Context_Id := 8;
+   --  CONTROL_Register_Index : constant Context_Id := 9;
 
    type Hardware_Context is record
       R0, R1, R2, R3   : Word;
@@ -230,14 +240,21 @@ package body System.BB.CPU_Primitives is
    --------------------
 
    procedure Context_Switch is
+      --  Was_In_Unprivilged_Mode_Before : Boolean;
    begin
       --  Interrupts must be disabled at this point
 
       pragma Assert (PRIMASK = 1);
 
-      --  Make deferred supervisor call pending
+      --  Was_In_Unprivilged_Mode_Before :=
+      --     Memory_Protection.Enter_Privileged_Mode;
 
+      --  Make deferred supervisor call pending
       ICSR := ICSR_Pend_SV_Set;
+
+      --  if Was_In_Unprivilged_Mode_Before then
+      --     Memory_Protection.Exit_Privileged_Mode;
+      --  end if;
 
       --  The context switch better be pending, as otherwise it means
       --  interrupts were not disabled.
@@ -287,8 +304,12 @@ package body System.BB.CPU_Primitives is
    ----------------------------------
 
    procedure Interrupt_Request_Handler is
+      Active_Priority : Integer;
    begin
+      Memory_Protection.Enable_Background_Data_Region;
+
       --  Call the handler (System.BB.Interrupts.Interrupt_Wrapper)
+      --  TODO: Don't leave background region enabled while calling ISRs
 
       Trap_Handlers (Interrupt_Request_Vector)(Interrupt_Request_Vector);
 
@@ -311,9 +332,12 @@ package body System.BB.CPU_Primitives is
          Context_Switch;
       end if;
 
+      Active_Priority := Running_Thread.Active_Priority;
+      Memory_Protection.Disable_Background_Data_Region;
+
       --  Restore interrupt masking of interrupted thread
 
-      Enable_Interrupts (Running_Thread.Active_Priority);
+      Enable_Interrupts (Active_Priority);
    end Interrupt_Request_Handler;
 
    ---------------------
@@ -330,6 +354,18 @@ package body System.BB.CPU_Primitives is
 
       Asm
         (Template =>
+         --
+         --  Enable CPU access to the background region temporarily so
+         --  that the Ada runtime can access its data structures:
+         --
+         "push {lr}" & NL &
+         "bl  memory_protection__enable_background_data_region" & NL &
+         "pop {lr}" & NL &
+
+         --
+         --  Save CPU context for the old current task:
+         --
+
          "movw r2, #:lower16:__gnat_running_thread_table" & NL &
          "movt r2, #:upper16:__gnat_running_thread_table" & NL &
          "mrs  r12, PSP "       & NL & -- Retrieve current PSP
@@ -348,14 +384,50 @@ package body System.BB.CPU_Primitives is
             "addeq  r12, #1"          & NL &  --   save flag in bit 0 of PSP
             "subne  lr, #16"          & NL) & -- else set FPCA flag in LR
 
-         --  Swap R4-R11 and PSP (stored in R12)
-
+         --
+         --  Save R4-R11, PSP (stored in R12) and CONTROL
+         --
          "stm  r3, {r4-r12}"        & NL & -- Save context
+         --  ??? "mrs  r0, control"         & NL &
+         --  ??? "str r0, [r3, #(9*4)]"     & NL &
+
+         --
+         --  Save thread-specific data region descriptors from the MPU for the
+         --  old current task:
+         --
+         "push {r2, r3, lr}" & NL &
+         "bl   __save_thread_mpu_data_regions" & NL &
+         "pop  {r2, r3, lr}" & NL &
+
+         --
+         --  Restore CPU context for new current task:
+         --
+
          "movw r3, #:lower16:first_thread_table" & NL &
          "movt r3, #:upper16:first_thread_table" & NL &
          "ldr  r3, [r3]"            & NL & -- Load address of new context
          "str  r3, [r2]"            & NL & -- Update value of Pend_SV_Context
+
+         --
+         --  Restore thread-specific data region descriptors in the MPU for the
+         --  new current task:
+         --
+         --  NOTE: Since we have the background region enabled, we can still
+         --  access the stack of the old thread, after calling this.
+         --
+         "push {r3, lr}" & NL &
+         "bl   __restore_thread_mpu_data_regions" & NL &
+         "pop  {r3, lr}" & NL &
+
+         --
+         --  Restore Save R4-R11, PSP (stored in R12) and CONTROL
+         --
          "ldm  r3, {r4-r12}"        & NL & -- Load context and new PSP
+         --  ??? "ldr  r0, [r3, #(9*4)]"    & NL &
+         --  ??? "msr  control, r0"         & NL & -- This may cause change to
+                                           -- unprivileged mode when returning
+                                           -- to thread mode
+         "isb"                      & NL &
 
          --  If floating point is enabled, check bit 0 of PSP to see if we
          --  need to restore the floating point context.
@@ -371,9 +443,51 @@ package body System.BB.CPU_Primitives is
          --  Finally, update PSP and perform the exception return
 
          "msr  PSP, r12" & NL &        -- Update PSP
+
+         --
+         --  Disable access to the background region:
+         --
+         "push {lr}" & NL &
+         "bl  memory_protection__disable_background_data_region" & NL &
+         "pop {lr}" & NL &
+
          "bx   lr",                    -- return to caller
          Volatile => True);
    end Pend_SV_Handler;
+
+   -------------------------------------
+   -- Restore_Thread_MPU_Data_Regions --
+   -------------------------------------
+
+   procedure Restore_Thread_MPU_Data_Regions
+   is
+      Current_Thread_Descriptor_Ptr : Thread_Id renames
+         Running_Thread_Table (CPU'First);
+      --
+      --  TODO: This only works for CPU core 0. If mutliple cores ever need to
+      --  be supported, that needs to be handled here.
+      --
+   begin
+      Memory_Protection.Restore_Thread_MPU_Data_Regions (
+         Current_Thread_Descriptor_Ptr.Thread_Data_Regions);
+   end Restore_Thread_MPU_Data_Regions;
+
+   ----------------------------------
+   -- Save_Thread_MPU_Data_Regions --
+   ----------------------------------
+
+   procedure Save_Thread_MPU_Data_Regions
+   is
+      Current_Thread_Descriptor_Ptr : Thread_Id renames
+         Running_Thread_Table (CPU'First);
+      --
+      --  TODO: This only works for CPU core 0. If mutliple cores ever need to
+      --  be supported, that needs to be handled here.
+      --
+   begin
+      Memory_Protection.Save_Thread_MPU_Data_Regions (
+         Current_Thread_Descriptor_Ptr.Thread_Data_Regions);
+   end Save_Thread_MPU_Data_Regions;
 
    ---------------------
    -- SV_Call_Handler --
@@ -381,7 +495,21 @@ package body System.BB.CPU_Primitives is
 
    procedure SV_Call_Handler is
    begin
-      GNAT_Error_Handler (SV_Call_Vector);
+      --  System.Text_IO.Extended.Put_String (
+      --   "*** Enter  SV_Call_Handler ***" & NL); -- ???
+      --  Clear nPRIV bit in the CPU control register to stay in privileged
+      --  mode upon return from the exception
+      Asm
+        (Template =>
+         "mrs  r0, control"  & NL &
+         "mvn  r1, #0x1" & NL &
+         "and  r0, r0, r1" & NL &
+         "msr  control, r0" & NL &
+         "isb",
+         Volatile => True, Clobber => "memory");
+
+      --  System.Text_IO.Extended.Put_String (
+      --   "*** Exit  SV_Call_Handler ***" & NL); -- ???
    end SV_Call_Handler;
 
    -----------------
@@ -401,16 +529,21 @@ package body System.BB.CPU_Primitives is
    ----------------------
 
    procedure Sys_Tick_Handler is
-      Max_Alarm_Interval : constant Timer_Interval := Timer_Interval'Last / 2;
-      Now : constant Timer_Interval := Read_Clock;
-
+      Active_Priority : Integer;
+      Max_Alarm_Interval : Timer_Interval;
+      Now : Timer_Interval;
    begin
+      Memory_Protection.Enable_Background_Data_Region;
+
+      Max_Alarm_Interval := Timer_Interval'Last / 2;
+      Now := Read_Clock;
+
       --  The following allows max. efficiency for "useless" tick interrupts
 
       if Alarm_Time - Now <= Max_Alarm_Interval then
 
          --  Alarm is still in the future, nothing to do, so return quickly
-
+         Memory_Protection.Disable_Background_Data_Region;
          return;
       end if;
 
@@ -426,7 +559,9 @@ package body System.BB.CPU_Primitives is
          Context_Switch;
       end if;
 
-      Enable_Interrupts (Running_Thread.Active_Priority);
+      Active_Priority := Running_Thread.Active_Priority;
+      Memory_Protection.Disable_Background_Data_Region;
+      Enable_Interrupts (Active_Priority);
    end Sys_Tick_Handler;
 
    ------------------------
@@ -457,7 +592,16 @@ package body System.BB.CPU_Primitives is
                  PSR    => 2**24, -- Set thumb bit
                  others => 0);
 
-      Buffer.all := (SP_process => New_SP, others => 0);
+      Buffer.all := (SP_process => New_SP,
+                     --
+                     --   CONTROL register settings:
+                     --   - SPSEL (bit 1) set (use PSP when running in thread
+                     --     mode)
+                     --   - nPRIV (bit 0) set (use Unprivileged thread mode)
+                     --
+                     --  CONTROL_Register_Index => 2#11#,
+                     --  CONTROL_Register_Index => 2#10#, -- ???
+                     others => 0);
    end Initialize_Context;
 
    ----------------------------

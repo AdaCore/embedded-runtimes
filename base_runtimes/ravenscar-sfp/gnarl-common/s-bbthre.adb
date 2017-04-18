@@ -38,6 +38,7 @@ with System.BB.Protection;
 with System.BB.Threads.Queues;
 
 with Ada.Unchecked_Conversion;
+with System.Text_IO.Extended; -- ???
 
 package body System.BB.Threads is
 
@@ -138,6 +139,7 @@ package body System.BB.Threads is
       This_CPU      : System.Multiprocessors.CPU_Range;
       Stack_Top     : System.Address;
       Stack_Bottom  : System.Address) is
+      use System.Storage_Elements;
    begin
       --  The environment thread executes the main procedure of the program
 
@@ -199,6 +201,14 @@ package body System.BB.Threads is
          Stack_Pointer   => (if System.Parameters.Stack_Grows_Down
                              then Id.Top_Of_Stack
                              else Id.Bottom_Of_Stack));
+
+      --
+      --  Set task-private MPU region for primary stack:
+      --
+      Id.Thread_Data_Regions.Stack_Region :=
+        (First_Address => Id.Bottom_Of_Stack,
+         Last_Address => To_Address (To_Integer (Id.Top_Of_Stack) - 1),
+         Permissions => Memory_Protection.Read_Write);
    end Initialize_Thread;
 
    ----------------

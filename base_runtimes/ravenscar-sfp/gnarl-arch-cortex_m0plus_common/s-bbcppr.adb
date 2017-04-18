@@ -23,13 +23,13 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
---  This version is for ARM bareboard targets using the ARMv6-M targets,
---  which only use a subset of Thumb2 instructions.
+--  This version is for ARM bareboard targets that have ARMv6-M-based CPU cores
+--  (i.e., Cortex-M0+), which only use a subset of Thumb2 instructions.
 --
 --  TODO: This file is a copy of
---  base_runtimes\ravenscar-sfp\gnarl-common\s-bbcppr.adb, with the Assembly
+--  base_runtimes/ravenscar-sfp/gnarl-common/s-bbcppr.adb, with the Assembly
 --  code modified to use only ARMv6-M instructions. To avoid code duplication
---  the orginal file should be refactored to move the Assembly code to a
+--  the original file should be refactored to move the Assembly code to a
 --  separate file.
 
 with Ada.Unchecked_Conversion; use Ada;

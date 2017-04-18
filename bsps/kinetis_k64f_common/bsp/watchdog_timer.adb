@@ -24,13 +24,11 @@
 --  ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
 --  POSSIBILITY OF SUCH DAMAGE.
 --
-with Kinetis_K64F.WDOG; use Kinetis_K64F;
+with Kinetis_K64F.WDOG;
+with System.BB.Parameters;
 
 package body Watchdog_Timer is
-   --
-   --  Compile-time flag to enable/disable firing to the watchdog timer
-   --
-   Watchdog_On : constant Boolean := False;
+   use Kinetis_K64F;
 
    --  Watchdog timeout value in watchdog clock cycles:
    Watchdog_Timeout : constant Half_Word := 16#2ff#; -- ~ 5s
@@ -51,7 +49,7 @@ package body Watchdog_Timer is
       WDOG.Registers.UNLOCK := 16#C520#; --  Key 1
       WDOG.Registers.UNLOCK := 16#D928#; --  Key 2
 
-      if Watchdog_On then
+      if System.BB.Parameters.Use_Watchdog_Timer then
          --
          --  Select LPO as clock source for the watchdog:
          --

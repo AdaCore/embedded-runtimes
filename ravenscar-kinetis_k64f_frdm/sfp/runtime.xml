@@ -31,7 +31,7 @@
          when "USER" =>
          when others =>
             for Required_Switches use Linker'Required_Switches &amp;
-            ("-L", "${RUNTIME_DIR(ada)}/../../bsps/kinetis_k64f_frdm/bsp/",
+            ("-L", "${RUNTIME_DIR(ada)}/../../bsps/kinetis_k64f_common/bsp/",
              "-T", "memory-map.ld",
              "-T", "common-" &amp; Loader &amp; ".ld");
      end case;

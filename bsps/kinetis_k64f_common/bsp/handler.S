@@ -51,9 +51,9 @@ __vectors:
 	.word   fault                /* 1 Reset.  */
 	.word   fault                /* 2 NMI.  */
 	.word   hard_fault_handler   /* 3 Hard fault. */
-	.word   fault                /* 4 Mem manage.  */
-	.word   fault                /* 5 Bus fault.  */
-	.word   fault                /* 6 Usage fault.  */
+	.word   mem_manage_fault_handler   /* 4 Mem manage.  */
+	.word   bus_fault_handler    /* 5 Bus fault.  */
+	.word   usage_fault_handler  /* 6 Usage fault.  */
 	.word   fault                /* 7 reserved.  */
 	.word   fault                /* 8 reserved.  */
 	.word   fault                /* 9 reserved.  */
@@ -149,6 +149,9 @@ __vectors:
         .word   __gnat_irq_trap      /* 99 IRQ83.  */
         .word   __gnat_irq_trap      /* 100 IRQ84.  */
         .word   __gnat_irq_trap      /* 101 IRQ85.  */
+
+	.globl	__vectors_end
+__vectors_end:
 
 	.text
 

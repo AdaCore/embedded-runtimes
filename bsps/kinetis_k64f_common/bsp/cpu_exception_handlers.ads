@@ -31,8 +31,20 @@ pragma Restrictions (No_Elaboration_Code);
 --
 package Cpu_Exception_Handlers is
 
+   procedure Bus_Fault_Handler
+     with No_Return;
+   pragma Export (C, Bus_Fault_Handler, "bus_fault_handler");
+
    procedure Hard_Fault_Handler
      with No_Return;
    pragma Export (C, Hard_Fault_Handler, "hard_fault_handler");
+
+   procedure Mem_Manage_Fault_Handler
+     with No_Return;
+   pragma Export (C, Mem_Manage_Fault_Handler, "mem_manage_fault_handler");
+
+   procedure Usage_Fault_Handler
+     with No_Return;
+   pragma Export (C, Usage_Fault_Handler, "usage_fault_handler");
 
 end Cpu_Exception_Handlers;

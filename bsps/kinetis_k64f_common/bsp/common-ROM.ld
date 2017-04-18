@@ -44,6 +44,11 @@ __DYNAMIC  =  0;
 
 _DEFAULT_STACK_SIZE = 1024;
 
+/*
+ * MPU region alignment in bytes
+ */
+MPU_REGION_ALIGNMENT = 32;
+
 ENTRY(_start_rom);
 
 SECTIONS
@@ -65,8 +70,14 @@ SECTIONS
 
   .text :
   {
+    . = ALIGN(MPU_REGION_ALIGNMENT);
+    __flash_text_start = .;
+
     *(.text .text.* .gnu.linkonce.t*)
     *(.gnu.warning)
+
+    . = ALIGN(MPU_REGION_ALIGNMENT);
+    __flash_text_end = .;
   } > flash_text
 
   .ARM.extab   : { *(.ARM.extab* .gnu.linkonce.armextab.*) } > flash_text
@@ -78,7 +89,7 @@ SECTIONS
   {
     *(.lit)
     *(.rodata .rodata.* .gnu.linkonce.r*)
-    . = ALIGN(0x4);
+    . = ALIGN(MPU_REGION_ALIGNMENT);
     __rom_end = .;
   } > flash_text
 
@@ -87,6 +98,9 @@ SECTIONS
   {
     __data_start = .;
     *(.data .data.* .gnu.linkonce.d*)
+
+    . = ALIGN(0x4);
+    *(.ram_code)        /* For code relocated to SRAM */
 
     /* Ensure that the end of the data section is always word aligned.
        Initial values are stored in 4-bytes blocks so we must guarantee
