@@ -10,6 +10,7 @@ from glob import glob
 import os
 import re
 import shutil
+import stat
 import subprocess
 import sys
 
@@ -18,6 +19,7 @@ def usage():
     print "  --prefix: installation prefix for the runtimes"
     print ""
     print "By default the runtimes are installed in the toolchain itself."
+
 
 def which(program):
     paths = os.environ['PATH'].split(os.pathsep)
@@ -30,6 +32,14 @@ def which(program):
         if os.path.isfile(f):
             return f
     return None
+
+
+def rmtree(path):
+    def del_rw(action, name, exc):
+        os.chmod(name, stat.S_IWRITE)
+        os.remove(name)
+    shutil.rmtree(path, onerror=del_rw)
+
 
 def build(prefix):
     sfp_projects = glob(os.path.join('ravenscar-*', 'sfp'))
@@ -60,9 +70,9 @@ def build(prefix):
     dest_bsps = os.path.join(install, 'bsps')
     dest_rts = os.path.join(install, 'base_runtimes')
     if os.path.isdir(dest_bsps):
-        shutil.rmtree(dest_bsps)
+        rmtree(dest_bsps)
     if os.path.isdir(dest_rts):
-        shutil.rmtree(dest_rts)
+        rmtree(dest_rts)
     shutil.copytree('bsps', dest_bsps)
     shutil.copytree('base_runtimes', dest_rts)
 
@@ -89,7 +99,7 @@ def build(prefix):
 
         print '... install in %s:' % dst
         if os.path.isdir(dst):
-            shutil.rmtree(dst)
+            rmtree(dst)
         shutil.copytree(d, dst)
         # filter runtime.xml and ada_source_path according to the installation
         # schema
