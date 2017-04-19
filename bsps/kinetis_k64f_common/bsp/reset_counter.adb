@@ -25,15 +25,9 @@
 --  POSSIBILITY OF SUCH DAMAGE.
 --
 
-with Interfaces.Bit_Types;
-with Memory_Protection;
-with System.Storage_Elements;
+with Interfaces.Bit_Types; use Interfaces.Bit_Types;
 
 package body Reset_Counter is
-   use Interfaces.Bit_Types;
-   use Memory_Protection;
-   use System.Storage_Elements;
-
    --
    --  CPU reset counter object type
    --
@@ -48,7 +42,7 @@ package body Reset_Counter is
    type Cpu_Reset_Counter_Type is record
       Count : Unsigned_32;
       Checksum : Unsigned_32;
-   end record with Alignment => Memory_Protection.MPU_Region_Alignment;
+   end record;
 
    Cpu_Reset_Counter : Cpu_Reset_Counter_Type
      with Linker_Section => ".cpu_reset_counter";
@@ -109,11 +103,6 @@ package body Reset_Counter is
 
    procedure Update is
    begin
-      --
-      --  Note: This subprogram gets invoked at startup time before
-      --  the memory protection is intialized. So, we can't call
-      --  Set_Component_Data_Region here
-      --
       if Valid then
          Cpu_Reset_Counter.Count := Cpu_Reset_Counter.Count + 1;
       else
@@ -127,18 +116,6 @@ package body Reset_Counter is
 
    -- ** --
 
-   function Get return Unsigned_32 is
-      Old_Component_Region : Data_Region_Type;
-      Result : Unsigned_32;
-   begin
-      Set_Component_Data_Region (Cpu_Reset_Counter'Address,
-                                 Cpu_Reset_Counter'Size / Byte'Size,
-                                 Read_Only,
-                                 Old_Component_Region);
-
-      Result := Cpu_Reset_Counter.Count;
-      Set_Component_Data_Region (Old_Component_Region);
-      return Result;
-   end Get;
+   function Get return Unsigned_32 is (Cpu_Reset_Counter.Count);
 
 end Reset_Counter;
