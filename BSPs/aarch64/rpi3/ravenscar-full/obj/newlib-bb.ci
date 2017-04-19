@@ -1,0 +1,27 @@
+graph: { title: "/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c"
+node: { title: "system__text_io__get" label: "system__text_io__get\n/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:44:13" shape : ellipse }
+node: { title: "system__text_io__is_rx_ready" label: "system__text_io__is_rx_ready\n/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:41:13" shape : ellipse }
+node: { title: "__errno" label: "__errno\n/Users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/sys/errno.h:15:13" shape : ellipse }
+node: { title: "system__text_io__put" label: "system__text_io__put\n/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:43:13" shape : ellipse }
+node: { title: "system__text_io__is_tx_ready" label: "system__text_io__is_tx_ready\n/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:40:13" shape : ellipse }
+node: { title: "system__text_io__use_cr_lf_for_new_line" label: "system__text_io__use_cr_lf_for_new_line\n/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:42:13" shape : ellipse }
+node: { title: "system__text_io__initialize" label: "system__text_io__initialize\n/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:39:13" shape : ellipse }
+node: { title: "_sbrk" label: "_sbrk\n/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:147:1\n0 bytes\n0 dynamic objects" }
+node: { title: "_read" label: "_read\n/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:119:1\n48 bytes (static)\n0 dynamic objects" }
+edge: { sourcename: "_read" targetname: "system__text_io__use_cr_lf_for_new_line" label: "/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:130:24" }
+edge: { sourcename: "_read" targetname: "system__text_io__get" label: "/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:76:10" }
+edge: { sourcename: "_read" targetname: "system__text_io__is_rx_ready" label: "/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:74:11" }
+edge: { sourcename: "_read" targetname: "system__text_io__initialize" label: "/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:124:5" }
+node: { title: "_lseek" label: "_lseek\n/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:112:1\n16 bytes (static)\n0 dynamic objects" }
+edge: { sourcename: "_lseek" targetname: "__errno" label: "/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:114:3" }
+node: { title: "_fstat" label: "_fstat\n/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:106:1\n0 bytes\n0 dynamic objects" }
+node: { title: "_close" label: "_close\n/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:100:1\n0 bytes\n0 dynamic objects" }
+node: { title: "_write" label: "_write\n/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:80:1\n48 bytes (static)\n0 dynamic objects" }
+edge: { sourcename: "_write" targetname: "system__text_io__put" label: "/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:68:3" }
+edge: { sourcename: "_write" targetname: "system__text_io__is_tx_ready" label: "/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:66:11" }
+edge: { sourcename: "_write" targetname: "system__text_io__put" label: "/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:68:3" }
+edge: { sourcename: "_write" targetname: "system__text_io__is_tx_ready" label: "/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:66:11" }
+edge: { sourcename: "_write" targetname: "system__text_io__use_cr_lf_for_new_line" label: "/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:91:24" }
+edge: { sourcename: "_write" targetname: "system__text_io__initialize" label: "/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:85:5" }
+node: { title: "_isatty" label: "_isatty\n/users/lambourg/sbx/wave/aarch64-elf-darwin/gnat/install/aarch64-elf/include/rts-sources/newlib/newlib-bb.c:58:1\n0 bytes\n0 dynamic objects" }
+}

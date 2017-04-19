@@ -1,0 +1,33 @@
+aggregate project Ravenscar_Full_Rpi3 is
+
+   Base_BSP_Source_Dir   := Project'Project_Dir & "aarch64/rpi3/";
+   Base_Installation_Dir := "aarch64-elf/lib/gnat/";
+   Board                 := "rpi3";
+   Default_Prefix        := 
+     Base_Installation_Dir & "ravenscar-full-" & Board;
+   Install_Dir           := external ("PREFIX", Default_Prefix);
+
+   for external ("Add_C_Support") use "newlib";
+   for external ("Memory_Profile") use "large";
+   for external ("Add_Memory_Operations") use "yes";
+   for external ("RTS_Profile") use "ravenscar-full";
+   for external ("Timer") use "timer64";
+   for external ("Use_Semihosting_IO") use "no";
+   for external ("Add_Math_Lib") use "hardfloat";
+   for external ("CPU_Family") use "aarch64";
+   for external ("Has_FPU") use "yes";
+   for external ("Stack_Checking_Support") use "yes";
+
+   for external ("INSTALL_PREFIX") use Install_Dir;
+
+   for Target use "aarch64-elf";
+   for Runtime ("Ada") use Base_BSP_Source_Dir &
+       "ravenscar-full";
+
+   for Project_Path use (Base_BSP_Source_Dir & "ravenscar-full");
+   for Project_Files use
+     (Base_BSP_Source_Dir & "internal/libgnat_merged.gpr",
+      Base_BSP_Source_Dir & "internal/libgnarl_empty.gpr", 
+      Base_BSP_Source_Dir & "ravenscar-full/install.gpr");
+
+end Ravenscar_Full_Rpi3;

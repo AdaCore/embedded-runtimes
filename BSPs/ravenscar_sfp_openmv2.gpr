@@ -1,0 +1,33 @@
+aggregate project Ravenscar_Sfp_Openmv2 is
+
+   Base_BSP_Source_Dir   := Project'Project_Dir & "cortex-m/stm32/openmv2/";
+   Base_Installation_Dir := "arm-eabi/lib/gnat/";
+   Board                 := "openmv2";
+   Default_Prefix        := 
+     Base_Installation_Dir & "ravenscar-sfp-" & Board;
+   Install_Dir           := external ("PREFIX", Default_Prefix);
+
+   for external ("Add_C_Support") use "no";
+   for external ("Memory_Profile") use "small";
+   for external ("Add_Memory_Operations") use "yes";
+   for external ("RTS_Profile") use "ravenscar-sfp";
+   for external ("Timer") use "timer32";
+   for external ("Use_Semihosting_IO") use "yes";
+   for external ("Add_Math_Lib") use "no";
+   for external ("CPU_Family") use "arm";
+   for external ("Has_FPU") use "yes";
+   for external ("Stack_Checking_Support") use "no";
+
+   for external ("INSTALL_PREFIX") use Install_Dir;
+
+   for Target use "arm-eabi";
+   for Runtime ("Ada") use Base_BSP_Source_Dir &
+       "ravenscar-sfp";
+
+   for Project_Path use (Base_BSP_Source_Dir & "ravenscar-sfp");
+   for Project_Files use
+     (Base_BSP_Source_Dir & "internal/libgnat.gpr",
+      Base_BSP_Source_Dir & "internal/libgnarl.gpr",
+      Base_BSP_Source_Dir & "ravenscar-sfp/install.gpr");
+
+end Ravenscar_Sfp_Openmv2;

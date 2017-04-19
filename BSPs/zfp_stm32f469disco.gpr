@@ -1,0 +1,28 @@
+aggregate project Zfp_Stm32F469Disco is
+
+   Base_BSP_Source_Dir   := Project'Project_Dir & "cortex-m/stm32/stm32f469disco/";
+   Base_Installation_Dir := "arm-eabi/lib/gnat/";
+   Board                 := "stm32f469disco";
+   Default_Prefix        := 
+     Base_Installation_Dir & "zfp-" & Board;
+   Install_Dir           := external ("PREFIX", Default_Prefix);
+
+   for external ("Add_C_Support") use "no";
+   for external ("Add_Memory_Operations") use "yes";
+   for external ("RTS_Profile") use "zfp";
+   for external ("Use_Semihosting_IO") use "yes";
+   for external ("Add_Math_Lib") use "no";
+   for external ("Has_FPU") use "yes";
+
+   for external ("INSTALL_PREFIX") use Install_Dir;
+
+   for Target use "arm-eabi";
+   for Runtime ("Ada") use Base_BSP_Source_Dir &
+       "zfp";
+
+   for Project_Path use (Base_BSP_Source_Dir & "zfp");
+   for Project_Files use
+     (Base_BSP_Source_Dir & "internal/libgnat.gpr",
+      Base_BSP_Source_Dir & "zfp/install.gpr");
+
+end Zfp_Stm32F469Disco;
