@@ -3,27 +3,14 @@
 This repository contains runtimes that add support for various boards to the
 GNAT GPL compiler for ARM.
 
-To build the runtimes: make sure GNAT GPL is in your PATH, and then just invoke
-make or make all:
+To build the runtimes: make sure GNAT GPL is in your PATH, and that you have
+also a python interpreter installed:
 
     $ cd embedded-runtimes
-    $ make all
+    $ python ./install.py
 
 Those runtimes can be either runtimes updated from the ones delivered with the
 compiler, or new ones.
-
-To use such runtimes, in your project file, you have two options: via
-an absolute path or by installing the runtimes.
-
-To reference them directly using their absolute path, you need to specify
-in your project file the runtime like below:
-
-    for Runtime ("Ada") use Project'Project_Dir &
-       "../embedded-runtimes/ravenscar-stm32f769disco/sfp";
-
-To install the runtime, make sure that GNAT is in your PATH, and use
-
-    $ make install
 
 You will then be able to use it as any standard runtime, either via
 
@@ -32,3 +19,12 @@ You will then be able to use it as any standard runtime, either via
 or add in your project:
 
     for Runtime ("Ada") use "ravenscar-sfp-stm32f769disco";
+
+# install.py options
+
+usage: install.py [--prefix=<path>]
+       install.py --help
+  --prefix: installation prefix for the runtimes.
+  --help: displays available options and exits.
+
+By default the runtimes are installed in the toolchain itself.
