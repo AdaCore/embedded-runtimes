@@ -46,10 +46,7 @@ package Kinetis_K64F is
    subtype Four_Bits is UInt4;
    subtype Five_Bits is UInt5;
    subtype Six_Bits is UInt6;
-   subtype Seven_Bits is UInt7;
-   subtype Fifteen_Bits is UInt15;
    subtype Half_Word is Unsigned_16;
-   subtype Twenty_Seven_Bits is UInt27;
 
    type External_Interrupt_Type is
      (DMA0_IRQ,
@@ -127,7 +124,7 @@ package Kinetis_K64F is
       DAC1_IRQ,
       ADC1_IRQ,
       I2C2_IRQ,
-      CAN0_ORed_Message_Buffer_IRQ,
+      CAN0_ORed_Message_buffer_IRQ,
       CAN0_Bus_Off_IRQ,
       CAN0_Error_IRQ,
       CAN0_Tx_Warning_IRQ,
