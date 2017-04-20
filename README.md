@@ -1,4 +1,4 @@
-[![Build status](https://ci.appveyor.com/api/projects/status/github/adacore/embedded-runtimes/master?svg=true)](https://ci.appveyor.com/project/github-integration-adacore/embedded-runtimes)
+[![Build status](https://ci.appveyor.com/api/projects/status/github/adacore/embedded-runtimes?svg=true)](https://ci.appveyor.com/project/github-integration-adacore/embedded-runtimes)
 
 # embedded-runtimes
 
