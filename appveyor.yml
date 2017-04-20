@@ -11,6 +11,8 @@ environment:
 cache:
   - C:\ADL_tools\
 
+clone_folder: C:\projects\embedded-runtimes
+
 install:
   # Define environment variables
   - ps: $env:TOOLS_DIR = "C:\ADL_tools\"
