@@ -1,3 +1,5 @@
+[![Build status](https://ci.appveyor.com/api/projects/status/github/adacore/embedded-runtimes/master?svg=true)](https://ci.appveyor.com/project/github-integration-adacore/embedded-runtimes)
+
 # embedded-runtimes
 
 This repository contains runtimes that add support for various boards to the
