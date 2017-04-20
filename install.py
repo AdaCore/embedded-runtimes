@@ -34,6 +34,14 @@ def which(program):
     return None
 
 
+def abspath(path):
+    if os.path.isabs(path):
+        return path
+    else:
+        pwd = os.path.dirname(os.path.abspath(__file__))
+        return os.path.join(pwd, path)
+
+
 def rmtree(path):
     def del_rw(action, name, exc):
         os.chmod(name, stat.S_IWRITE)
@@ -42,8 +50,8 @@ def rmtree(path):
 
 
 def build(prefix):
-    sfp_projects = glob(os.path.join('ravenscar-*', 'sfp'))
-    full_projects = glob(os.path.join('ravenscar-*', 'full'))
+    sfp_projects = glob(abspath(os.path.join('ravenscar-*', 'sfp')))
+    full_projects = glob(abspath(os.path.join('ravenscar-*', 'full')))
 
     all_projects = sfp_projects + full_projects
 
@@ -61,7 +69,7 @@ def build(prefix):
 
     # Check the installation dir
     if prefix is not None:
-        install = prefix
+        install = abspath(prefix)
     else:
         install = os.path.join(
             os.path.dirname(gcc_dir), target, 'lib', 'gnat')
@@ -73,8 +81,8 @@ def build(prefix):
         rmtree(dest_bsps)
     if os.path.isdir(dest_rts):
         rmtree(dest_rts)
-    shutil.copytree('bsps', dest_bsps)
-    shutil.copytree('base_runtimes', dest_rts)
+    shutil.copytree(abspath('bsps'), dest_bsps)
+    shutil.copytree(abspath('base_runtimes'), dest_rts)
 
     for d in all_projects:
         root = os.path.dirname(d)
