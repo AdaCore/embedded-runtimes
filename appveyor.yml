@@ -6,20 +6,18 @@ version: 0.0.{build}
 # Setup python for build and test-suite scripts
 environment:
   PYTHON: C:\\Python27
+  TOOLS_DIR: C:\ADL_tools
+  GNAT_ARM_ELF_INSTALLER: C:\ADL_tools\gnat-gpl-2016-arm-elf-windows-bin.exe
+  INSTALL_DIR: C:\Install
+  RTS_DIR: C:\Install\arm-eabi\lib\gnat
 
 # Cache directories will be preseved from one build to the other
 cache:
-  - C:\ADL_tools\
+  - '%TOOLS_DIR%'
 
 clone_folder: C:\projects\embedded-runtimes
 
 install:
-  # Define environment variables
-  - ps: $env:TOOLS_DIR = "C:\ADL_tools\"
-  - ps: $env:INSTALL_DIR = "C:\Install\"
-  - ps: $env:GNAT_ARM_ELF_INSTALLER = $env:TOOLS_DIR + "gnat-gpl-2016-arm-elf-windows-bin.exe"
-  - ps: $env:RTS_DIR = $env:INSTALL_DIR + "arm-eabi\lib\gnat\"
-
   # Show current dir and its content
   - cmd: cd
   - cmd: dir
@@ -31,23 +29,23 @@ install:
   - ps: md -f $env:INSTALL_DIR
 
   # Show content of tool dir
-  - ps: dir $env:TOOLS_DIR
+  - cmd: dir %TOOLS_DIR%
 
   # Download compiler installer if not already in the tool dir
-  - ps: If (Test-Path $env:GNAT_ARM_ELF_INSTALLER){echo compiler already in cache}Else{(new-object net.webclient).DownloadFile('http://mirrors.cdn.adacore.com/art/5742ee65a3f5d77ed752e1ad', $env:GNAT_ARM_ELF_INSTALLER)}
+  - ps: If (Test-Path $env:GNAT_ARM_ELF_INSTALLER){echo "compiler already in cache"}Else{(new-object net.webclient).DownloadFile('http://mirrors.cdn.adacore.com/art/5742ee65a3f5d77ed752e1ad', $env:GNAT_ARM_ELF_INSTALLER)}
 
   # Show content of install dir again so we can see if the download was ok
-  - ps: dir $env:INSTALL_DIR
+  - cmd: dir %TOOLS_DIR%
 
   # Install the compiler
   - cmd: cmd /c start /wait %GNAT_ARM_ELF_INSTALLER% /S /D=%INSTALL_DIR%
 
   # Show content of install dir again so we can see if install was ok
-  - ps: dir $env:INSTALL_DIR
-  - ps: dir $env:RTS_DIR
+  - cmd: dir %INSTALL_DIR%
+  - cmd: dir %RTS_DIR%
 
   # Add compiler to the PATH
-  - ps: $env:Path += ";" + $env:INSTALL_DIR +"bin"
+  - ps: $env:Path += ";" + $env:INSTALL_DIR +"\bin"
 
   # Check that we can run the compiler (also display the version)
   - ps: arm-eabi-gnatls -v
@@ -58,4 +56,4 @@ build: off
 # Build and install the runtimes
 test_script:
   - cmd: python C:\projects\embedded-runtimes\install.py
-  - ps: dir $env:RTS_DIR
+  - cmd: dir %RTS_DIR%

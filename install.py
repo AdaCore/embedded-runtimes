@@ -49,6 +49,28 @@ def rmtree(path):
     shutil.rmtree(path, onerror=del_rw)
 
 
+def run_program(argv):
+    print "$ %s" % " ".join(argv)
+    p = subprocess.Popen(
+        argv,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE
+    )
+    stdout, stderr = p.communicate()
+
+    try:
+        stdout = stdout.decode('ascii')
+    except UnicodeError:
+        return 'stdout is not ASCII'
+
+    try:
+        stderr = stderr.decode('ascii')
+    except UnicodeError:
+        return 'stderr is not ASCII'
+
+    return (p.returncode, stdout, stderr)
+
+
 def build(prefix):
     sfp_projects = glob(abspath(os.path.join('ravenscar-*', 'sfp')))
     full_projects = glob(abspath(os.path.join('ravenscar-*', 'full')))
@@ -84,6 +106,8 @@ def build(prefix):
     shutil.copytree(abspath('bsps'), dest_bsps)
     shutil.copytree(abspath('base_runtimes'), dest_rts)
 
+    overall_check = True
+
     for d in all_projects:
         root = os.path.dirname(d)
         gpr = os.path.join(root, 'ravenscar_build.gpr')
@@ -96,8 +120,14 @@ def build(prefix):
         else:
             cmd += ['-XRTS=ravenscar-full']
 
-        print '... gprbuild %s' % ' '.join(cmd[1:])
-        subprocess.call(cmd, stdout=sys.stdout, stderr=sys.stderr, shell=False)
+        returncode, stdout, stderr = run_program(cmd)
+        print stderr
+        print stdout
+        if returncode:
+            print 'Build error (gprbuild returned {}):\n{}'.format(
+                returncode, stderr)
+            overall_check = False
+            continue
 
         # Compute the rts name
         variant = os.path.basename(d)
@@ -131,6 +161,8 @@ def build(prefix):
         with open(source_path, 'w') as fp:
             fp.write('\n'.join(lines))
 
+    return overall_check
+
 
 def main():
     try:
@@ -150,7 +182,9 @@ def main():
         elif opt == '--prefix':
             prefix = os.path.abspath(arg)
 
-    build(prefix)
+    success = build(prefix)
+    if not success:
+        sys.exit(2)
 
 if __name__ == '__main__':
     main()
