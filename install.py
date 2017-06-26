@@ -32,7 +32,7 @@ def which(program):
     """
     paths = os.environ['PATH'].split(os.pathsep)
     if sys.platform == 'win32':
-        (base, ext) = os.path.splitext(executable)
+        (base, ext) = os.path.splitext(program)
         if not ext:
             program += '.exe'
     for p in paths:
@@ -88,7 +88,6 @@ def run_program(argv):
 
 def build(archs, prefix):
     projects = glob(abspath(os.path.join('BSPs', '*.gpr')))
-    overall_check = True
 
     for gpr in projects:
         # retrieve the rts target compiler
@@ -140,9 +139,7 @@ def build(archs, prefix):
         error = False
         returncode = run_program(cmd)
         if returncode:
-            print 'Build error (gprbuild returned {}):\n{}'.format(
-                returncode, stderr)
-            overall_check = False
+            print 'Build error (gprbuild returned {}):\n'.format(returncode)
             error = True
             continue
 
@@ -151,9 +148,8 @@ def build(archs, prefix):
             cmd += ['-XPREFIX=%s' % prefix]
         returncode = run_program(cmd)
         if returncode:
-            print 'Build error (gprinstall returned {}):\n{}'.format(
-                returncode, stderr)
-            overall_check = False
+            print 'Install error (gprinstall returned {}):\n{}'.format(
+                returncode)
             error = True
             continue
 
@@ -166,8 +162,8 @@ def build(archs, prefix):
 
 def main():
     try:
-       opts, args = getopt.getopt(
-           sys.argv[1:], "", ["arch=", "prefix=", "help"])
+        opts, args = getopt.getopt(
+            sys.argv[1:], "", ["arch=", "prefix=", "help"])
     except getopt.GetoptError, e:
         print "error: " + str(e)
         usage()
