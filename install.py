@@ -121,20 +121,6 @@ def build(archs, prefix):
         gprbuild = os.path.join(gcc_dir, 'gprbuild')
         gprinstall = os.path.join(gcc_dir, 'gprinstall')
 
-        # clean-up the old rts if any
-        if prefix is not None:
-            rts_dir = prefix
-        else:
-            gcc_base = os.path.abspath(os.path.join(gcc_dir, os.pardir))
-            rts_dir = os.path.join(gcc_base, target, 'lib', 'gnat')
-        rts_name = os.path.basename(gpr).replace('_', '-').replace('.gpr', '')
-        rts_path = os.path.join(rts_dir, rts_name)
-        if os.path.isdir(rts_path):
-            print '[rmtree] %s' % rts_path
-            rmtree(rts_path)
-        else:
-            print "not found: %s" % rts_path
-
         cmd = [gprbuild, '-P', gpr, '-p', '-q', '-j0']
         error = False
         returncode = run_program(cmd)
@@ -142,6 +128,15 @@ def build(archs, prefix):
             print 'Build error (gprbuild returned {}):\n'.format(returncode)
             error = True
             continue
+
+        # Try to uninstall first, in case the run-time is already installed
+        cmd = [gprinstall, '-P', gpr, '-p', '-q', '-f', '--uninstall']
+        if prefix is not None:
+            cmd += ['-XPREFIX=%s' % prefix]
+        returncode = run_program(cmd)
+        if returncode:
+            print 'Uninstall error (gprinstall returned {}):\n{}'.format(
+                returncode)
 
         cmd = [gprinstall, '-P', gpr, '-p', '-q', '-f']
         if prefix is not None:
