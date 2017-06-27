@@ -135,7 +135,7 @@ def build(archs, prefix):
             cmd += ['-XPREFIX=%s' % prefix]
         returncode = run_program(cmd)
         if returncode:
-            print 'Uninstall error (gprinstall returned {}):\n{}'.format(
+            print 'Uninstall error (gprinstall returned {}):\n'.format(
                 returncode)
 
         cmd = [gprinstall, '-P', gpr, '-p', '-q', '-f']
@@ -143,7 +143,7 @@ def build(archs, prefix):
             cmd += ['-XPREFIX=%s' % prefix]
         returncode = run_program(cmd)
         if returncode:
-            print 'Install error (gprinstall returned {}):\n{}'.format(
+            print 'Install error (gprinstall returned {}):\n'.format(
                 returncode)
             error = True
             continue
