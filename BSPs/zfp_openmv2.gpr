@@ -20,9 +20,11 @@ aggregate project Zfp_Openmv2 is
    for Runtime ("Ada") use Base_BSP_Source_Dir &
        "zfp";
 
-   for Project_Path use (Base_BSP_Source_Dir & "zfp");
+   for Project_Path use
+     (Base_BSP_Source_Dir & "zfp",
+      "../lib/gnat");
    for Project_Files use
-     (Base_BSP_Source_Dir & "internal/libgnat.gpr",
+     (Base_BSP_Source_Dir & "zfp/libgnat.gpr",
       Base_BSP_Source_Dir & "zfp/install.gpr");
 
 end Zfp_Openmv2;

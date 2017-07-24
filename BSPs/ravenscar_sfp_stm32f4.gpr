@@ -23,10 +23,12 @@ aggregate project Ravenscar_Sfp_Stm32F4 is
    for Runtime ("Ada") use Base_BSP_Source_Dir &
        "ravenscar-sfp";
 
-   for Project_Path use (Base_BSP_Source_Dir & "ravenscar-sfp");
+   for Project_Path use
+     (Base_BSP_Source_Dir & "ravenscar-sfp",
+      "../lib/gnat");
    for Project_Files use
-     (Base_BSP_Source_Dir & "internal/libgnat.gpr",
-      Base_BSP_Source_Dir & "internal/libgnarl.gpr",
+     (Base_BSP_Source_Dir & "ravenscar-sfp/libgnat.gpr",
+      Base_BSP_Source_Dir & "ravenscar-sfp/libgnarl.gpr",
       Base_BSP_Source_Dir & "ravenscar-sfp/install.gpr");
 
 end Ravenscar_Sfp_Stm32F4;

@@ -8,7 +8,7 @@
 --                                                                          --
 --        Copyright (C) 1999-2002 Universidad Politecnica de Madrid         --
 --             Copyright (C) 2003-2004 The European Space Agency            --
---                     Copyright (C) 2003-2016, AdaCore                     --
+--                     Copyright (C) 2003-2017, AdaCore                     --
 --                                                                          --
 -- GNAT is free software;  you can  redistribute it  and/or modify it under --
 -- terms of the  GNU General Public License as published  by the Free Soft- --
@@ -26,6 +26,12 @@
 -- see the files COPYING3 and COPYING.RUNTIME respectively.  If not, see    --
 -- <http://www.gnu.org/licenses/>.                                          --
 --                                                                          --
+-- GNAT was originally developed  by the GNAT team at  New York University. --
+-- Extensive contributions were provided by Ada Core Technologies Inc.      --
+--                                                                          --
+-- The port of GNARL to bare board targets was initially developed by the   --
+-- Real-Time Systems Group at the Technical University of Madrid.           --
+--                                                                          --
 ------------------------------------------------------------------------------
 
 --  This package contains the primitives which are dependent on the
@@ -34,50 +40,28 @@
 pragma Restrictions (No_Elaboration_Code);
 
 with System;
-with System.BB.Parameters;
+with System.Storage_Elements;
+with System.BB.CPU_Specific;
 
 package System.BB.CPU_Primitives is
    pragma Preelaborate;
 
-   type Word is mod 2**System.Word_Size;
-
    ------------------------
-   -- Context management --
+   -- Context Management --
    ------------------------
 
-   --  The context buffer is an abstract type that holds all values indexed by
-   --  Context_Id that make up a thread's state which are not otherwise stored
-   --  in main memory. This typically includes all user-visible registers, and
-   --  possibly some other status as well.
-
-   --  In case different contexts have different amounts of state (for example,
-   --  due to absence of a floating-point unit in a particular configuration,
-   --  or just the FPU not being used), it is expected that these details
-   --  are handled in the implementation, which should ignore updates of
-   --  unsupported state and return a default value for queries of such state.
-
-   type Context_Buffer is private;
-
-   type Context_Id is range 0 .. Parameters.Context_Buffer_Capacity - 1;
-   --  Type used for accessing to the different elements in the context buffer
+   subtype Context_Buffer is System.BB.CPU_Specific.Context_Buffer;
 
    procedure Context_Switch;
-   pragma Inline (Context_Switch);
-   --  Perform the context switch between the running_thread and the
-   --  first_thread. The value of running_thread will be updated.
+   --  Perform the context switch between the running_thread and the first
+   --  thread. The value of running_thread will be updated.
 
-   function Get_Context
-     (Context : Context_Buffer;
-      Index   : Context_Id) return Word;
-   pragma Inline (Get_Context);
-   --  Returns item of the specified context.
-
-   procedure Set_Context
-     (Context : in out Context_Buffer;
-      Index   : Context_Id;
-      Value   : Word);
-   pragma Inline (Set_Context);
-   --  Updates the given context.
+   procedure Initialize_Stack
+     (Base          : Address;
+      Size          : Storage_Elements.Storage_Offset;
+      Stack_Pointer : out Address);
+   --  Initialize a stack which spans BASE .. BASE + SIZE - 1. Set
+   --  STACK_POINTER to the address to be used by the processor.
 
    procedure Initialize_Context
      (Buffer          : not null access Context_Buffer;
@@ -90,32 +74,17 @@ package System.BB.CPU_Primitives is
    --  program counter, and argument to be passed are provided as arguments.
 
    ---------------------------------
-   -- Interrupt and trap handling --
+   -- Interrupt and Trap Handling --
    ---------------------------------
 
-   type Vector_Id is range 0 .. Parameters.Trap_Vectors - 1;
-
    procedure Install_Error_Handlers;
-   pragma Inline (Install_Error_Handlers);
-   --  Called at system initialization time to install a CPU specific
-   --  trap handler, GNAT_Error_Handler, that converts synchronous traps
-   --  to appropriate exceptions.
-
-   procedure Install_Trap_Handler
-     (Service_Routine : System.Address;
-      Vector          : Vector_Id;
-      Synchronous     : Boolean := False);
-   --  Install a new handler in the trap table, both for synchronous and
-   --  asynchronous traps. Interrupts must be disabled before the trap
-   --  handler is called.
+   --  Called at system initialization time to install a CPU specific trap
+   --  handler, GNAT_Error_Handler, that converts synchronous traps to
+   --  appropriate exceptions.
 
    procedure Disable_Interrupts;
    pragma Inline (Disable_Interrupts);
-   --  All external interrupts (asynchronous traps) are disabled. Note
-   --  that this will take care of the CPU specific part of enabling and
-   --  disabling the interrupts. For systems were this is not sufficient, the
-   --  Board_Support.Set_Current_Priority routine must also be implemented in
-   --  order to do the board-specific enable/disable operations.
+   --  All external interrupts (asynchronous traps) are disabled
 
    procedure Enable_Interrupts (Level : Integer);
    pragma Inline (Enable_Interrupts);
@@ -123,20 +92,5 @@ package System.BB.CPU_Primitives is
 
    procedure Initialize_CPU;
    pragma Inline (Initialize_CPU);
-   --  Set the CPU up to use the proper stack for interrupts, initialize and
-   --  enable system trap handlers.
-
-private
-   Context_Buffer_Size : constant :=
-     Parameters.Context_Buffer_Capacity * System.Word_Size;
-   --  Size calculated taken into account that the components are 32-bit, and
-   --  that we want then aligned on 64-bit boundaries.
-
-   type Context_Buffer is array (Context_Id) of System.Address;
-   for Context_Buffer'Size use Context_Buffer_Size;
-   for Context_Buffer'Alignment use 8;
-   --  This array contains all the registers that the thread needs to save
-   --  within its thread descriptor. Using double word boundaries allows us
-   --  to use double word loads and stores safely in the context switch.
 
 end System.BB.CPU_Primitives;

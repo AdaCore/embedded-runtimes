@@ -168,6 +168,10 @@ package Interfaces.Raspberry_Pi is
      with Address => System'To_Address (MU_Base + 16#04#), Import, Volatile;
    MU_IO : Unsigned_32
      with Address => System'To_Address (MU_Base + 16#40#), Import, Volatile;
+   MU_IIR : Unsigned_32
+     with Address => System'To_Address (MU_Base + 16#44#), Import, Volatile;
+   MU_IER : Unsigned_32
+     with Address => System'To_Address (MU_Base + 16#48#), Import, Volatile;
    MU_LCR : Unsigned_32
      with Address => System'To_Address (MU_Base + 16#4c#), Import, Volatile;
    MU_LSR : Unsigned_32
@@ -427,5 +431,49 @@ package Interfaces.Raspberry_Pi is
       Clock_Id_PIXEL : constant Unsigned_32 := 9;
       Clock_Id_PWM  : constant Unsigned_32 := 10;
    end Mailbox_Interfaces;
+
+   --  PL011  (UART0)
+
+   type Pl011_Registers_Type is record
+      DR     : Unsigned_32;
+      RSRECR : Unsigned_32;
+      Pad08  : Unsigned_32;
+      Pad0c  : Unsigned_32;
+
+      Pad10  : Unsigned_32;
+      Pad14  : Unsigned_32;
+      FR     : Unsigned_32;
+      Pad1c  : Unsigned_32;
+
+      ILPR   : Unsigned_32;
+      IBRD   : Unsigned_32;
+      FBRD   : Unsigned_32;
+      LCRH   : Unsigned_32;
+
+      CR     : Unsigned_32;
+      IFLS   : Unsigned_32;
+      IMSC   : Unsigned_32;
+      RIS    : Unsigned_32;
+
+      MIS    : Unsigned_32;
+      ICR    : Unsigned_32;
+      DMACR  : Unsigned_32;
+      Pad4c  : Unsigned_32;
+   end record;
+
+   PL011_Base : constant := IO_Base + 16#20_1000#;
+
+   PL011_Registers : Pl011_Registers_Type
+     with Address => System'To_Address (PL011_Base), Volatile, Import;
+
+   package PL011_Bits is
+      FR_TXFF : constant := 2**5;
+      FR_RXFE : constant := 2**4;
+      FR_BUSY : constant := 2**3;
+
+      MASK_RT : constant := 2**6;
+      MASK_TX : constant := 2**5;
+      MASK_RX : constant := 2**4;
+   end PL011_Bits;
 
 end Interfaces.Raspberry_Pi;

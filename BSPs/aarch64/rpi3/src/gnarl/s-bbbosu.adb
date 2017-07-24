@@ -34,11 +34,11 @@
 --                                                                          --
 ------------------------------------------------------------------------------
 
-with Ada.Unchecked_Conversion;
 with System.Machine_Code;
 with System.BB.CPU_Primitives.Multiprocessors;
-with System.BB.Parameters;
-with Interfaces; use Interfaces;
+with System.BB.Parameters; use System.BB.Parameters;
+with Interfaces;           use Interfaces;
+with Interfaces.AArch64;   use Interfaces.AArch64;
 with Interfaces.Raspberry_Pi;
 
 package body System.BB.Board_Support is
@@ -55,27 +55,39 @@ package body System.BB.Board_Support is
    pragma Export (C, Initialize_CPU_Devices, "__gnat_initialize_cpu_devices");
    --  Per CPU device initialization
 
-   procedure Set_CNTP_CTL_EL0 (Val : Unsigned_32);
-   procedure Set_CNTV_CTL_EL0 (Val : Unsigned_32);
-   --  Set the CNTP_CTL and CNTV_CTL register
+   procedure Set_CNTP_TVAL (Val : Unsigned_32);
+   --  Set CNTP_TVAL_EL0 or CNTP_TVAL_EL2
 
-   ----------------------
-   -- Set_CNTP_CTL_EL0 --
-   ----------------------
+   procedure Set_CNTP_CTL (Val : Unsigned_32);
+   --  Set CNTP_CTL_EL0 or CNTP_CTL_EL2
 
-   procedure Set_CNTP_CTL_EL0 (Val : Unsigned_32) is
+   ------------------
+   -- Set_CNTP_CTL --
+   ------------------
+
+   procedure Set_CNTP_CTL (Val : Unsigned_32) is
    begin
-      Asm ("msr cntp_ctl_el0, %0",
-           Inputs => Unsigned_32'Asm_Input ("r", Val),
-           Volatile => True);
-   end Set_CNTP_CTL_EL0;
+      case Runtime_EL is
+         when 1 =>
+            Set_CNTP_CTL_EL0 (Val);
+         when 2 =>
+            Set_CNTHP_CTL_EL2 (Val);
+      end case;
+   end Set_CNTP_CTL;
 
-   procedure Set_CNTV_CTL_EL0 (Val : Unsigned_32) is
+   -------------------
+   -- Set_CNTP_TVAL --
+   -------------------
+
+   procedure Set_CNTP_TVAL (Val : Unsigned_32) is
    begin
-      Asm ("msr cntv_ctl_el0, %0",
-           Inputs => Unsigned_32'Asm_Input ("r", Val),
-           Volatile => True);
-   end Set_CNTV_CTL_EL0;
+      case Runtime_EL is
+         when 1 =>
+            Set_CNTP_TVAL_EL0 (Val);
+         when 2 =>
+            Set_CNTHP_TVAL_EL2 (Val);
+      end case;
+   end Set_CNTP_TVAL;
 
    ----------------------------
    -- Initialize_CPU_Devices --
@@ -84,7 +96,7 @@ package body System.BB.Board_Support is
    procedure Initialize_CPU_Devices is
    begin
       --  Disable CNTP and mask.
-      Set_CNTP_CTL_EL0 (2);
+      Set_CNTP_CTL (2);
 
       --  Disable CNTV and mask.
       Set_CNTV_CTL_EL0 (2);
@@ -114,7 +126,7 @@ package body System.BB.Board_Support is
       --  Disable PMU ints
       Local_Registers.PMU_Int_Routing_Clr := 2#1111_1111#;
 
-      --  Core timer PS to IRQ
+      --  Core timers to IRQ
       for I in Core_Unsigned_32'Range loop
          Local_Registers.Cores_Timer_Int_Ctr (I) := 2#0000_1111#;
       end loop;
@@ -129,7 +141,8 @@ package body System.BB.Board_Support is
 
    package body Time is
 
-      Alarm_Interrupt_ID : constant BB.Interrupts.Interrupt_ID := 1;
+      Alarm_Interrupt_ID : constant BB.Interrupts.Interrupt_ID :=
+                             (case Runtime_EL is when 1 => 1, when 2 => 2);
       --  Non-secure counter (CNTPNSIRQ)
 
       ------------------------
@@ -146,13 +159,11 @@ package body System.BB.Board_Support is
 
       procedure Set_Alarm (Ticks : Timer_Interval) is
       begin
-         --  Set CNTP_TVAL_EL0
-         Asm ("msr cntp_tval_el0, %0",
-              Inputs => Unsigned_32'Asm_Input ("r", Unsigned_32 (Ticks)),
-              Volatile => True);
+         --  Set CNTP_TVAL_EL
+         Set_CNTP_TVAL (Unsigned_32 (Ticks));
 
          --  Set CNTP_CTL (enable and unmask)
-         Set_CNTP_CTL_EL0 (1);
+         Set_CNTP_CTL (1);
       end Set_Alarm;
 
       ----------------
@@ -160,14 +171,9 @@ package body System.BB.Board_Support is
       ----------------
 
       function Read_Clock return BB.Time.Time is
-         Res : BB.Time.Time;
       begin
          --  Read CNTPCT
-         Asm ("mrs %0, cntpct_el0",
-              Outputs => BB.Time.Time'Asm_Output ("=r", Res),
-              Volatile => True);
-
-         return Res;
+         return BB.Time.Time (Get_CNTPCT_EL0);
       end Read_Clock;
 
       ---------------------------
@@ -190,7 +196,7 @@ package body System.BB.Board_Support is
       procedure Clear_Alarm_Interrupt is
       begin
          --  Disable and mask
-         Set_CNTP_CTL_EL0 (2);
+         Set_CNTP_CTL (2);
       end Clear_Alarm_Interrupt;
    end Time;
 
@@ -201,8 +207,11 @@ package body System.BB.Board_Support is
    procedure IRQ_Handler
    is
       This_CPU  : constant CPU := Multiprocessors.Current_CPU;
+
       Src       : constant Unsigned_32 :=
                     Local_Registers.Cores_IRQ_Source (Natural (This_CPU));
+      --  Read interrupt source from Core_IRQ_Source
+
       Pending   : Unsigned_32;
       IRQ       : Interrupt_ID;
       Base      : Unsigned_32;
@@ -217,6 +226,7 @@ package body System.BB.Board_Support is
    begin
 
       if Src = 0 then
+         --  No interrupt
          return;
       end if;
 

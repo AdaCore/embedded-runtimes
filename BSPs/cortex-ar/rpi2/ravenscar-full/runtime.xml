@@ -26,11 +26,6 @@
          Common_Required_Switches;
    end Compiler;
 
-   package Binder is
-      for Required_Switches ("Ada") use Binder'Required_Switches ("Ada") &
-        ("-nostdlib");
-   end Binder;
-
    package Linker is
       for Required_Switches use Linker'Required_Switches &
         ("-L${RUNTIME_DIR(ada)}/adalib",

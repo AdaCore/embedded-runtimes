@@ -1,1 +1,6 @@
+../../../src/arch
+../../../src/gnarl
+../../src/crt0
+../src/crt0
+../src/gnarl
 arch
