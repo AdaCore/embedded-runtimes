@@ -9,7 +9,8 @@ all:
 	    echo "> $$cmd"; \
 	    $$cmd; \
 	  else \
-	    echo "Skipping $$(dirname $$prj): no compiler found for $$tgt"; \
+	    echo "*** Skipping $$(basename "$$prj"):"; \
+	    echo "    no compiler found for $$tgt"; \
 	  fi; \
 	done
 

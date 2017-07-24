@@ -130,11 +130,6 @@ def build(archs, prefix):
             rts_dir = os.path.join(gcc_base, target, 'lib', 'gnat')
         rts_name = os.path.basename(gpr).replace('_', '-').replace('.gpr', '')
         rts_path = os.path.join(rts_dir, rts_name)
-        if os.path.isdir(rts_path):
-            print '[rmtree] %s' % rts_path
-            rmtree(rts_path)
-        else:
-            print "not found: %s" % rts_path
 
         cmd = [gprbuild, '-P', gpr, '-p', '-q', '-j0']
         error = False
@@ -145,6 +140,12 @@ def build(archs, prefix):
             overall_check = False
             error = True
             continue
+
+        if os.path.isdir(rts_path):
+            cmd = [gprinstall, '--uninstall', '-P', gpr, '-f', '-q']
+            if prefix is not None:
+                cmd += ['-XPREFIX=%s' % prefix]
+            returncode = run_program(cmd)
 
         cmd = [gprinstall, '-P', gpr, '-p', '-q', '-f']
         if prefix is not None:

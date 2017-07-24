@@ -16,7 +16,6 @@ aggregate project Ravenscar_Sfp_Sam4S is
    for external ("Add_Math_Lib") use "no";
    for external ("CPU_Family") use "arm";
    for external ("Has_FPU") use "no";
-   for external ("Stack_Checking_Support") use "no";
 
    for external ("INSTALL_PREFIX") use Install_Dir;
 
