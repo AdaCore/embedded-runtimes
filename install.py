@@ -32,7 +32,7 @@ def which(program):
     """
     paths = os.environ['PATH'].split(os.pathsep)
     if sys.platform == 'win32':
-        (base, ext) = os.path.splitext(executable)
+        (base, ext) = os.path.splitext(program)
         if not ext:
             program += '.exe'
     for p in paths:
